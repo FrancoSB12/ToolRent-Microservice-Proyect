@@ -4,11 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@EnableEurekaClient
-public class ClientserviceApplication {
+public class ClientServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ClientserviceApplication.class, args);
+		SpringApplication.run(ClientServiceApplication.class, args);
 	}
 
 }
