@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/kardex")
+@RequestMapping("/kardex")
 @CrossOrigin("*")
 public class KardexController {
     private final KardexService kardexService;
@@ -24,7 +24,7 @@ public class KardexController {
     }
 
     //Get Kardex
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<?> getAllKardex() {
         List<KardexEntity> kardexes = kardexService.getAllKardex();
         return new ResponseEntity<>(kardexes, HttpStatus.OK);

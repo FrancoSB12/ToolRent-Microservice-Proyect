@@ -29,14 +29,6 @@ public class KardexService {
         return kardexRepository.findByDateBetween(startDate, endDate);
     }
 
-    public boolean exists(Long id){
-        return kardexRepository.existsById(id);
-    }
-
-    public KardexEntity saveKardex(KardexEntity kardex){
-        return kardexRepository.save(kardex);
-    }
-
     public void createRegisterToolTypeKardex(Long idToolType){
         KardexEntity kardex = new KardexEntity();
         kardex.setOperationType(KardexOperationType.REGISTRO);
@@ -53,16 +45,6 @@ public class KardexService {
         kardex.setStockInvolved(1);     //For every other movement, the stock involved is always 1
         kardex.setToolTypeId(request.getToolTypeId());
         kardexRepository.save(kardex);
-    }
-
-    public boolean deleteKardexById(Long id){
-        if(kardexRepository.existsById(id)){
-            kardexRepository.deleteById(id);
-            return true;
-
-        } else{
-            return false;
-        }
     }
 }
 
