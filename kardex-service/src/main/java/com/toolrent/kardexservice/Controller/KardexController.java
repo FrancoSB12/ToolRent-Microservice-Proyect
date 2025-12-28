@@ -1,8 +1,8 @@
 package com.toolrent.kardexservice.Controller;
 
+import com.toolrent.kardexservice.DTO.CreateKardexRequest;
 import com.toolrent.kardexservice.Entity.KardexEntity;
 import com.toolrent.kardexservice.Service.KardexService;
-import com.toolrent.kardexservice.Service.KardexValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -17,37 +17,10 @@ import java.util.List;
 @CrossOrigin("*")
 public class KardexController {
     private final KardexService kardexService;
-    private final KardexValidationService kardexValidationService;
 
     @Autowired
-    public KardexController(KardexService kardexService, KardexValidationService kardexValidationService) {
+    public KardexController(KardexService kardexService) {
         this.kardexService = kardexService;
-        this.kardexValidationService = kardexValidationService;
-    }
-
-    //Create kardex
-    @PostMapping
-    public ResponseEntity<?> createKardex(@RequestBody KardexEntity kardex) {
-        //First, it's verified that the kardex doesn't exist
-        if (kardex.getId() != null && kardexService.exists(kardex.getId())) {
-            return new ResponseEntity<>("El kardex ya existe en la base de datos", HttpStatus.CONFLICT);
-        }
-
-        //Then, the data is validated for accuracy
-        if(kardexValidationService.isInvalidOperationType(kardex.getOperationType().toString())){
-            return new ResponseEntity<>("El tipo de operación es inválido", HttpStatus.BAD_REQUEST);
-        }
-
-        if(kardexValidationService.isInvalidDate(kardex.getDate())){
-            return new ResponseEntity<>("La fecha es inválida", HttpStatus.BAD_REQUEST);
-        }
-
-        if(kardexValidationService.isInvalidStock(kardex.getStockInvolved())){
-            return new ResponseEntity<>("El stock involucrado es inválido", HttpStatus.BAD_REQUEST);
-        }
-
-        KardexEntity newKardex = kardexService.saveKardex(kardex);
-        return new ResponseEntity<>(newKardex, HttpStatus.CREATED);
     }
 
     //Get Kardex
@@ -69,10 +42,16 @@ public class KardexController {
         return new ResponseEntity<>(kardexes, HttpStatus.OK);
     }
 
-    //Delete kardex
-    @DeleteMapping("/kardex/{id}")
-    public ResponseEntity<String> deleteKardexById(@PathVariable Long id){
-        boolean deletedKardex = kardexService.deleteKardexById(id);
-        return deletedKardex ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    //Controllers that only communicates with other microservices
+    //Create kardex by operation type
+    @PostMapping("/entry")
+    public void createKardexEntry(@RequestBody CreateKardexRequest request) {
+        kardexService.createKardexEntry(request);
+    }
+
+    //Create kardex bt register of a tool type
+    @PostMapping("/entry/{idToolType}")
+    public void createRegisterToolTypeKardex(@PathVariable Long idToolType) {
+        kardexService.createRegisterToolTypeKardex(idToolType);
     }
 }
