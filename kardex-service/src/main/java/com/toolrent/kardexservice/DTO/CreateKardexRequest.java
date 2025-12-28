@@ -7,4 +7,5 @@ import lombok.Data;
 public class CreateKardexRequest {
     private Long toolTypeId;
     private KardexOperationType operationType;
+    private Integer stock;
 }

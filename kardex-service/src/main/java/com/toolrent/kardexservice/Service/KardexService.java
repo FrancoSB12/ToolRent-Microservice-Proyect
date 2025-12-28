@@ -29,20 +29,11 @@ public class KardexService {
         return kardexRepository.findByDateBetween(startDate, endDate);
     }
 
-    public void createRegisterToolTypeKardex(Long idToolType){
-        KardexEntity kardex = new KardexEntity();
-        kardex.setOperationType(KardexOperationType.REGISTRO);
-        kardex.setDate(LocalDate.now());
-        kardex.setStockInvolved(0); //The stock is 0 because it's creating the type of tool
-        kardex.setToolTypeId(idToolType);
-        kardexRepository.save(kardex);
-    }
-
     public void createKardexEntry(CreateKardexRequest request){
         KardexEntity kardex = new KardexEntity();
         kardex.setOperationType(request.getOperationType());
         kardex.setDate(LocalDate.now());
-        kardex.setStockInvolved(1);     //For every other movement, the stock involved is always 1
+        kardex.setStockInvolved(request.getStock());
         kardex.setToolTypeId(request.getToolTypeId());
         kardexRepository.save(kardex);
     }

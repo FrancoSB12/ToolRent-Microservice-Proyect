@@ -43,15 +43,8 @@ public class KardexController {
     }
 
     //Controllers that only communicates with other microservices
-    //Create kardex by operation type
     @PostMapping("/entry")
     public void createKardexEntry(@RequestBody CreateKardexRequest request) {
         kardexService.createKardexEntry(request);
-    }
-
-    //Create kardex bt register of a tool type
-    @PostMapping("/entry/{idToolType}")
-    public void createRegisterToolTypeKardex(@PathVariable Long idToolType) {
-        kardexService.createRegisterToolTypeKardex(idToolType);
     }
 }
