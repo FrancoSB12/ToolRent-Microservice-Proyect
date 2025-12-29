@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface ClientRepository extends JpaRepository<ClientEntity, String>  {
-    public List<ClientEntity> findByStatus(String status);
+    List<ClientEntity> findByStatus(String status);
 }
