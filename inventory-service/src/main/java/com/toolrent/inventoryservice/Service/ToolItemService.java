@@ -6,7 +6,6 @@ import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
 import com.toolrent.inventoryservice.Enum.ToolStatus;
 import com.toolrent.inventoryservice.Repository.ToolItemRepository;
-import jakarta.persistence.Access;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -36,9 +35,9 @@ public class ToolItemService {
         //The tool type is searched in the database and increase the available and total stock
         ToolTypeEntity managedToolType;
         if(newToolItem.getStatus() != ToolStatus.DISPONIBLE || newToolItem.getDamageLevel() != ToolDamageLevel.NO_DANADA){
-            managedToolType = toolTypeService.increaseTotalStock(newToolItem.getToolType(), 1);
+            managedToolType = toolTypeService.changeTotalStock(newToolItem.getToolType().getId(), 1);
         } else {
-            managedToolType = toolTypeService.increaseBothStocks(newToolItem.getToolType(), 1);
+            managedToolType = toolTypeService.increaseBothStocks(newToolItem.getToolType().getId(), 1);
         }
 
         //it's saved in the updated toolType in the dbToolItem
@@ -80,6 +79,29 @@ public class ToolItemService {
 
     public boolean existsBySerialNumber(String serialNumber){ return toolItemRepository.existsBySerialNumber(serialNumber); }
 
+    public ToolItemEntity updateToolItem(Long id, ToolItemEntity tool){
+        //The tool is searched in the database
+        Optional<ToolItemEntity> databaseToolItem = toolItemRepository.findById(id);
+        ToolItemEntity databaseToolItemEntity = databaseToolItem.get();
+
+        //Each attribute updatable is checked to see which one was updated
+        if(tool.getStatus() != null){
+            if(toolValidationService.isInvalidToolStatus(tool.getStatus().toString())){
+                throw new IllegalArgumentException("Estado de la herramienta inválido");
+            }
+            databaseToolItemEntity.setStatus(tool.getStatus());
+        }
+
+        if(tool.getDamageLevel() != null){
+            if(toolValidationService.isInvalidDamageLevel(tool.getDamageLevel().toString())){
+                throw new IllegalArgumentException("Nivel de daño de la herramienta inválido");
+            }
+            databaseToolItemEntity.setDamageLevel(tool.getDamageLevel());
+        }
+
+        return toolItemRepository.save(databaseToolItemEntity);
+    }
+
     public ToolItemEntity enableToolItem(Long id){
         //"Irreparable" and "Dada de Baja" case are verified in the controller
 
@@ -92,7 +114,7 @@ public class ToolItemService {
         dbToolItemEnt.setDamageLevel(ToolDamageLevel.NO_DANADA);
 
         //The tool type is searched in the database and increase the available stock
-        ToolTypeEntity updatedToolType = toolTypeService.increaseAvailableStock(dbToolItemEnt.getToolType(), 1);
+        ToolTypeEntity updatedToolType = toolTypeService.changeAvailableStock(dbToolItemEnt.getToolType().getId(), 1);
 
         //it's saved in the updated toolType in the dbToolItemEntity
         dbToolItemEnt.setToolType(updatedToolType);
@@ -114,7 +136,7 @@ public class ToolItemService {
             processIrreparableTool(dbToolItemEnt, toolItem.getDamageLevel());
 
             //The tool type is searched in the database and decrease the available stock
-            ToolTypeEntity updatedToolType = toolTypeService.decreaseAvailableStock(dbToolItemEnt.getToolType(), 1);
+            ToolTypeEntity updatedToolType = toolTypeService.changeAvailableStock(dbToolItemEnt.getToolType().getId(), -1);
 
             //it's saved in the updated toolType in the dbToolItem
             dbToolItemEnt.setToolType(updatedToolType);
@@ -131,7 +153,7 @@ public class ToolItemService {
             dbToolItemEnt.setDamageLevel(toolItem.getDamageLevel());
 
             //The tool type is searched in the database and decrease the available stock
-            ToolTypeEntity updatedToolType = toolTypeService.decreaseAvailableStock(dbToolItemEnt.getToolType(), 1);
+            ToolTypeEntity updatedToolType = toolTypeService.changeAvailableStock(dbToolItemEnt.getToolType().getId(), -1);
 
             //it's saved in the updated toolType in the dbToolItem
             dbToolItemEnt.setToolType(updatedToolType);
@@ -170,7 +192,7 @@ public class ToolItemService {
         }
 
         //The tool type is searched in the database and decrease the total stock, since an irreparable or unused tool can't be "Disponible" again
-        ToolTypeEntity updatedToolType = toolTypeService.decreaseTotalStock(dbToolItem.getToolType(), 1);
+        ToolTypeEntity updatedToolType = toolTypeService.changeTotalStock(dbToolItem.getToolType().getId(), -1);
 
         //it's saved in the updated toolType in the dbToolItem
         dbToolItem.setToolType(updatedToolType);

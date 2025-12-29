@@ -116,40 +116,24 @@ public class ToolTypeService {
         return toolTypeRepository.save(dbToolTypeEnt);
     }
 
-    public ToolTypeEntity increaseAvailableStock(ToolTypeEntity toolType, Integer quantity){
-        Optional<ToolTypeEntity> dbToolType = getToolTypeById(toolType.getId());
+    public ToolTypeEntity changeAvailableStock(Long id, Integer quantity){
+        Optional<ToolTypeEntity> dbToolType = getToolTypeById(id);
         ToolTypeEntity dbToolTypeEnt = dbToolType.get();
 
         dbToolTypeEnt.setAvailableStock(dbToolTypeEnt.getAvailableStock() + quantity);
         return toolTypeRepository.save(dbToolTypeEnt);
     }
 
-    public ToolTypeEntity decreaseAvailableStock(ToolTypeEntity toolType, Integer quantity){
-        Optional<ToolTypeEntity> dbToolType = getToolTypeById(toolType.getId());
-        ToolTypeEntity dbToolTypeEnt = dbToolType.get();
-
-        dbToolTypeEnt.setAvailableStock(dbToolTypeEnt.getAvailableStock() - quantity);
-        return toolTypeRepository.save(dbToolTypeEnt);
-    }
-
-    public ToolTypeEntity increaseTotalStock(ToolTypeEntity toolType, Integer quantity){
-        Optional<ToolTypeEntity> dbToolType = getToolTypeById(toolType.getId());
+    public ToolTypeEntity changeTotalStock(Long id, Integer quantity){
+        Optional<ToolTypeEntity> dbToolType = getToolTypeById(id);
         ToolTypeEntity dbToolTypeEnt = dbToolType.get();
 
         dbToolTypeEnt.setTotalStock(dbToolTypeEnt.getTotalStock() + quantity);
         return toolTypeRepository.save(dbToolTypeEnt);
     }
 
-    public ToolTypeEntity decreaseTotalStock(ToolTypeEntity toolType, Integer quantity){
-        Optional<ToolTypeEntity> dbToolType = getToolTypeById(toolType.getId());
-        ToolTypeEntity dbToolTypeEnt = dbToolType.get();
-
-        dbToolTypeEnt.setTotalStock(dbToolTypeEnt.getTotalStock() - quantity);
-        return toolTypeRepository.save(dbToolTypeEnt);
-    }
-
-    public ToolTypeEntity increaseBothStocks(ToolTypeEntity toolType, Integer quantity){
-        Optional<ToolTypeEntity> dbToolType = getToolTypeById(toolType.getId());
+    public ToolTypeEntity increaseBothStocks(Long id, Integer quantity){
+        Optional<ToolTypeEntity> dbToolType = getToolTypeById(id);
         ToolTypeEntity dbToolTypeEnt = dbToolType.get();
 
         dbToolTypeEnt.setTotalStock(dbToolTypeEnt.getTotalStock() + quantity);

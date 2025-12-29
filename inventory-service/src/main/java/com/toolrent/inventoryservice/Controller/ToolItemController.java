@@ -95,6 +95,27 @@ public class ToolItemController {
         }
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateToolItem(@PathVariable Long id, @RequestBody ToolItemEntity toolItem){
+        try {
+            //Verify that the tool has an id and the id isn't null
+            if (toolItem.getId() == null) {
+                return new ResponseEntity<>("El id no puede estar vacío o ser nulo", HttpStatus.BAD_REQUEST);
+            }
+
+            //Verify that the tool item exist in the database
+            if (!toolItemService.exists(id)) {
+                return new ResponseEntity<>("La herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+            }
+
+            ToolItemEntity updatedTool = toolItemService.updateToolItem(id, toolItem);
+            return new ResponseEntity<>(updatedTool, HttpStatus.OK);
+
+        } catch (Exception ex) {
+            return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     //Update tool item
     @PutMapping("/enable-tool-item/{serialNumber}")
     public ResponseEntity<?> enableToolItem(@PathVariable String serialNumber) {

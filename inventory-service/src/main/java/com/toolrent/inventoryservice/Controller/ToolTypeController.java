@@ -1,5 +1,6 @@
 package com.toolrent.inventoryservice.Controller;
 
+import com.toolrent.inventoryservice.DTO.ChangeStockRequest;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Service.ToolTypeService;
 import com.toolrent.inventoryservice.Service.ToolValidationService;
@@ -101,6 +102,50 @@ public class ToolTypeController {
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @PutMapping("/change-available-stock")
+    public ResponseEntity<?> changeAvailableStock(@RequestBody ChangeStockRequest request){
+        Long id = request.getId();
+        Integer quantity = request.getQuantity();
+
+        //Verify that the tool type exist in the database
+        if (!toolTypeService.exists(id)) {
+            return new ResponseEntity<>("El tipo de herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        ToolTypeEntity updatedToolType = toolTypeService.changeAvailableStock(id, quantity);
+        return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
+    }
+
+    @PutMapping("/change-total-stock")
+    public ResponseEntity<?> changeTotalStock(@RequestBody ChangeStockRequest request){
+        //Verify that the tool type exist in the database
+        Long id = request.getId();
+        if (!toolTypeService.exists(id)) {
+            return new ResponseEntity<>("El tipo de herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        Integer quantity = request.getQuantity();
+        ToolTypeEntity updatedToolType = toolTypeService.changeTotalStock(id, quantity);
+        return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
+    }
+
+    @PutMapping("/increase-both-stock")
+    public ResponseEntity<?> increaseBothStock(@RequestBody ChangeStockRequest request){
+        //Verify that the tool type exist in the database
+        Long id = request.getId();
+        if (!toolTypeService.exists(id)) {
+            return new ResponseEntity<>("El tipo de herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        Integer quantity = request.getQuantity();
+        if(toolValidationService.isInvalidStockOrFee(quantity)) {
+            return new ResponseEntity<>("Cantidad de incremento de stock inválido", HttpStatus.BAD_REQUEST);
+        }
+
+        ToolTypeEntity updatedToolType = toolTypeService.changeTotalStock(id, quantity);
+        return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
     }
 
     //Delete tool type
