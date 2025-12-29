@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/inventory/tool-items")
+@RequestMapping("/inventory/tool-item")
 @CrossOrigin("*")
 public class ToolItemController {
     private final ToolItemService toolItemService;
@@ -42,11 +42,13 @@ public class ToolItemController {
             return new ResponseEntity<>("Número de serie de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 
-        if (toolValidationService.isInvalidToolStatus(toolItem.getStatus().toString())) {
+        String statusString = (toolItem.getStatus() != null) ? toolItem.getStatus().toString() : null;
+        if (toolValidationService.isInvalidToolStatus(statusString)) {
             return new ResponseEntity<>("Estado de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 
-        if (toolValidationService.isInvalidDamageLevel(toolItem.getDamageLevel().toString())) {
+        String damageLevelString = (toolItem.getDamageLevel() != null) ? toolItem.getDamageLevel().toString() : null;
+        if (toolValidationService.isInvalidDamageLevel(damageLevelString)) {
             return new ResponseEntity<>("Nivel de daño de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 

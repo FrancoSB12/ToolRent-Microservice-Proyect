@@ -42,13 +42,13 @@ public class ToolValidationService {
         //Verify that the tool status is correct
         String formattedStatus = status.toUpperCase().replace(" ", "_");
         for(ToolStatus toolStatus : ToolStatus.values()){
-            if(!toolStatus.name().equals(formattedStatus)){
-                return true;
+            if(toolStatus.name().equals(formattedStatus)){
+                return false;
             }
         }
 
-        //If the for loop ends without finding an equality, it's valid
-        return false;
+        //If the for loop ends without finding an equality, it's invalid
+        return true;
     }
 
     public boolean isInvalidDamageLevel(String damageLevel){
@@ -57,12 +57,12 @@ public class ToolValidationService {
         //Verify that the tool damage is correct
         String formattedDamageLevel = damageLevel.toUpperCase().replace(" ", "_");
         for(ToolDamageLevel toolDamageLevel : ToolDamageLevel.values()){
-            if(!toolDamageLevel.name().equals(formattedDamageLevel)){
-                return true;
+            if(toolDamageLevel.name().equals(formattedDamageLevel)){
+                return false;
             }
         }
 
-        //If the for loop ends without finding an equality, it's valid
-        return false;
+        //If the for loop ends without finding an equality, it's invalid
+        return true;
     }
 }
