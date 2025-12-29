@@ -5,6 +5,7 @@ import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Repository.ToolTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class ToolTypeService {
         return toolTypeRepository.findByName(name);
     }
 
+    @Transactional
     public ToolTypeEntity createToolType(ToolTypeEntity newToolType){
         //Save the toolType
         ToolTypeEntity savedToolType = toolTypeRepository.save(newToolType);
