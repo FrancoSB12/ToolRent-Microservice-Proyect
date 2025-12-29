@@ -80,27 +80,24 @@ public class ToolItemService {
 
     public boolean existsBySerialNumber(String serialNumber){ return toolItemRepository.existsBySerialNumber(serialNumber); }
 
-    public ToolItemEntity updateToolItem(Long id, ToolItemEntity tool){
-        //The tool is searched in the database
-        Optional<ToolItemEntity> databaseToolItem = toolItemRepository.findById(id);
-        ToolItemEntity databaseToolItemEntity = databaseToolItem.get();
+    public ToolItemEntity enableToolItem(Long id){
+        //"Irreparable" and "Dada de Baja" case are verified in the controller
 
-        //Each attribute updatable is checked to see which one was updated
-        if(tool.getStatus() != null){
-            if(toolValidationService.isInvalidToolStatus(tool.getStatus().toString())){
-                throw new IllegalArgumentException("Estado de la herramienta inválido");
-            }
-            databaseToolItemEntity.setStatus(tool.getStatus());
-        }
+        //The tool item is searched in the database ande changes its status and damage level
+        Optional<ToolItemEntity> dbToolItem = getToolItemById(id);
+        ToolItemEntity dbToolItemEnt = dbToolItem.get();
 
-        if(tool.getDamageLevel() != null){
-            if(toolValidationService.isInvalidDamageLevel(tool.getDamageLevel().toString())){
-                throw new IllegalArgumentException("Nivel de daño de la herramienta inválido");
-            }
-            databaseToolItemEntity.setDamageLevel(tool.getDamageLevel());
-        }
+        //It's ensured that the tool has the corresponding statuses
+        dbToolItemEnt.setStatus(ToolStatus.DISPONIBLE);
+        dbToolItemEnt.setDamageLevel(ToolDamageLevel.NO_DANADA);
 
-        return toolItemRepository.save(databaseToolItemEntity);
+        //The tool type is searched in the database and increase the available stock
+        ToolTypeEntity updatedToolType = toolTypeService.increaseAvailableStock(dbToolItemEnt.getToolType(), 1);
+
+        //it's saved in the updated toolType in the dbToolItemEntity
+        dbToolItemEnt.setToolType(updatedToolType);
+
+        return toolItemRepository.save(dbToolItemEnt);
     }
 
     //This method is used for internal maintenance
@@ -148,53 +145,16 @@ public class ToolItemService {
     }
 
     //This method is used when a tool is returned damaged
-    @Transactional
-    public ToolItemEntity evaluateDamage(Long toolId, ToolItemEntity toolItemFromFront){
-        //The tool is searched in the database
-        Optional<ToolItemEntity> dbToolItem = getToolItemById(toolId);
-        ToolItemEntity dbToolItemEnt = dbToolItem.get();
 
-        List<LoanXToolItemEntity> toolItemHistory = loanXToolItemService.getHistoryByToolId(toolId);
 
-        if(toolItemHistory.isEmpty()){
-            throw new RuntimeException("Esta herramienta nunca ha sido prestada, no se puede cobrar a nadie");
-        }
-
-        //The first one in the list is the most recent loan that the tool has
-        LoanEntity lastLoan = toolItemHistory.get(0).getLoan();
-        ClientEntity clientToCharge = lastLoan.getClient();
-
-        if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
-            processIrreparableTool(dbToolItemEnt, toolItemFromFront.getDamageLevel());
-
-        } else if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.NO_DANADA){
-            //This is the case where it was false that the tool was damaged
-            dbToolItemEnt.setStatus(ToolStatus.DISPONIBLE);
-            dbToolItemEnt.setDamageLevel(ToolDamageLevel.NO_DANADA);
-
-            toolTypeService.increaseAvailableStock(dbToolItemEnt.getToolType(), 1);
-
-            if(clientToCharge.getDebt() == 0){
-                clientToCharge.setStatus("Activo");
-                clientService.saveClient(clientToCharge);
-            }
-            return toolItemRepository.save(dbToolItemEnt);
+    public boolean deleteToolItemById(Long id){
+        if(toolItemRepository.existsById(id)){
+            toolItemRepository.deleteById(id);
+            return true;
 
         } else{
-            //It's ensured that the tool has the corresponding status and damage level
-            dbToolItemEnt.setStatus(ToolStatus.EN_REPARACION);
-            dbToolItemEnt.setDamageLevel(toolItemFromFront.getDamageLevel());
+            return false;
         }
-
-        //Replacement value or repair charge is applied to the client
-        clientService.chargeClientFee(clientToCharge, dbToolItemEnt.getToolType(), toolItemFromFront.getDamageLevel());
-
-        //Creates the associated kardex
-        if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){}
-        kardexService.createDisableToolItemKardex(dbToolItemEnt);
-
-        //The available stock isn't reduced since is already reduced by the loan
-        return toolItemRepository.save(dbToolItemEnt);
     }
 
     //Private method
