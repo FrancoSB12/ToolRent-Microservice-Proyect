@@ -18,9 +18,9 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 @Service
 public class RentService {
@@ -33,6 +33,63 @@ public class RentService {
         this.rentRepository = rentRepository;
         this.rentXToolItemService = rentXToolItemService;
         this.restTemplate = restTemplate;
+    }
+
+    public List<RentEntity> getAllLoans(){
+        return rentRepository.findAllWithDetails();
+    }
+
+    public Optional<RentEntity> getLoanById(Long id){
+        return rentRepository.findByIdWithDetails(id);
+    }
+
+    public List<RentEntity> getActiveLoansByClient(String clientRun){
+        return rentRepository.findActiveLoansByClient(clientRun);
+    }
+
+    public List<RentEntity> getLoanByStatus(String status){
+        return rentRepository.findByStatusWithDetails(status);
+    }
+
+    public List<RentEntity> getLoanByValidity(String validity){
+        return rentRepository.findByValidity(validity);
+    }
+
+    public List<Map<String, Object>> getMostLoanedTools(LocalDate startDate, LocalDate endDate){
+        List<Object[]> results = rentXToolItemService.getMostLoanedToolsBetweenDates(startDate, endDate);
+
+        //The shape of the object is changed to display the name of the tool and the number of loans
+        List<Map<String, Object>> loanedToolList = results.stream()
+                .map(r -> Map.of(
+                        "toolName", (String) r[0],
+                        "totalLoans", r[1]
+                ))
+                .toList();
+
+        //The most borrowed tool(s) is/are sought
+        List<Map<String, Object>> mostLoanedTools = new ArrayList<>();
+        long maxLoans = 0L;
+
+        for(Map<String, Object> mapTool : loanedToolList){
+            Long totalLoans = (Long) mapTool.get("totalLoans");
+
+            if(totalLoans > maxLoans){
+                //If a tool is found that has more loans
+                maxLoans = totalLoans;
+                mostLoanedTools.clear();
+                mostLoanedTools.add(mapTool);
+
+            } else if(totalLoans == maxLoans){
+                //If the tool has the same number of loans as the current one
+                mostLoanedTools.add(mapTool);
+            }
+            //If totalLoans < maxLoans it does nothing
+        }
+        return mostLoanedTools;
+    }
+
+    public boolean exists(Long id){
+        return rentRepository.existsById(id);
     }
 
     @Transactional
@@ -121,19 +178,141 @@ public class RentService {
             rentXToolItemService.save(item);
 
             //Update status
-            updateStatus(item);
+            ToolItem toolItem = getToolItem(item.getToolItemId());
+            updateStatus(toolItem, "PRESTADA");
 
             //Update Stock
-            updateStock(item.getToolTypeId());
+            updateAvailableStock(item.getToolTypeId(), -1);
 
             //Create associated kardex
             createKardex(item.getToolTypeId(), "PRESTAMO");
         }
 
         //Update the client active rents
-        updateActiveRents(client);
+        updateActiveRents(client, 1);
 
         return savedLoan;
+    }
+
+    @Transactional
+    public RentEntity returnLoan(Long id, RentEntity rent){
+        //The rent is searched in the database
+        Optional<RentEntity> dbLoan = getLoanById(id);
+        RentEntity dbRentEnt = dbLoan.get();
+
+        //The client is searched in the database
+        Client client = fetchClientInDB(dbRentEnt.getClientRun());
+
+        //The list of tools from the frontend is converted into a map for quick searching
+        Map<Long, ToolItem> toolItemMap = new HashMap<>();
+        if(rent.getRentTools() != null){
+            for(RentXToolItemEntity rentItems : rent.getRentTools()){
+                ToolItem toolItem = fetchToolItemInDB(rentItems.getToolItemId());
+                toolItemMap.put(toolItem.getId(), toolItem);
+            }
+        }
+
+        //Update stock and validity of the tool
+        List<RentXToolItemEntity> dbRentItems = rentXToolItemService.getAllLoanToolItemsByLoan_Id(id);
+
+        //The database is browsed
+        for(RentXToolItemEntity dbRentItem : dbRentItems) {
+            ToolItem dbToolItem = fetchToolItemInDB(dbRentItem.getToolItemId());
+            ToolItem itemMapInfo = toolItemMap.get(dbToolItem.getId());
+
+            if (itemMapInfo.getDamageLevel().equals("EN_EVALUACION")) {
+                try {
+                    itemMapInfo.setStatus("EN_REPARACION");
+                    restTemplate.put("http://inventory-service/inventory/tool-item/" + dbToolItem.getId(), itemMapInfo, ToolItem.class);
+                } catch (RestClientException e) {
+                    throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
+                }
+
+                createKardex(dbToolItem.getToolTypeId(), "DEVOLUCION");
+                createKardex(dbToolItem.getToolTypeId(), "REPARACION");
+
+                //Since the tool returned by the client is damaged, the client is prevented from requesting more tools until the damage level has been verified
+                //If the tools were indeed in good condition, they will be "Active" again
+                client.setStatus("Restringido");
+
+            } else if(itemMapInfo.getDamageLevel().equals("NO_DANADA")){
+                //"EN_EVALUACION" it's a placeholder until the tool damage is evaluated
+                //If it isn't in under review then it's "No dañada"
+                updateStatus(itemMapInfo, "DISPONIBLE");
+                updateAvailableStock(dbToolItem.getToolTypeId(), 1);
+
+                createKardex(dbToolItem.getToolTypeId(), "DEVOLUCION");
+
+            } else{
+                throw new RuntimeException("La herramienta ya tiene un nivel de daño");
+            }
+        }
+
+        //Decrease the client's active loans count
+        updateActiveRents(client, -1);
+
+        //If the client returned the tools late
+        if(dbRentEnt.getReturnDate().isBefore(LocalDate.now())){
+            //Late return fee calculation and change of status to the client
+            int daysBetween = (int) ChronoUnit.DAYS.between(dbRentEnt.getReturnDate(), LocalDate.now());
+            Integer lateReturnFee = daysBetween * dbRentEnt.getLateReturnFee();
+
+            try {
+                client.setDebt(client.getDebt() + lateReturnFee);
+                restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+            } catch (RestClientException e) {
+                throw new RuntimeException("Error actualizando datos del cliente.");
+            }
+
+            dbRentEnt.setValidity("Atrasado");
+        } else{
+            dbRentEnt.setValidity("Puntual");
+        }
+
+        dbRentEnt.setReturnTime(LocalTime.now());
+        dbRentEnt.setStatus("Finalizado");
+        return rentRepository.save(dbRentEnt);
+    }
+
+    public RentEntity updateLateReturnFee(Long id, RentEntity rent){
+        //The rent is searched in the database
+        Optional<RentEntity> dbRent = rentRepository.findById(id);
+        RentEntity dbRentEnt = dbRent.get();
+
+        //Since only the late return fine can be updated, only that is reviewed
+        if(rent.getLateReturnFee() != null){
+            if(rent.getLateReturnFee() < 0){
+                throw new IllegalArgumentException("Monto de multa por atraso incorrecta");
+            }
+            dbRentEnt.setLateReturnFee(rent.getLateReturnFee());
+        }
+
+        return rentRepository.save(dbRentEnt);
+    }
+
+    @Transactional
+    public void checkAndSetLateStatuses() {
+        List<RentEntity> activeRents = rentRepository.findByStatusWithDetails("Activo");
+
+        for (RentEntity rent : activeRents) {
+            if (rent.getReturnDate().isBefore(LocalDate.now())) {
+
+                //Update the validity to 'Atrasado'
+                rent.setValidity("Atrasado");
+                rentRepository.save(rent);
+
+                //Restrict the client if it isn't
+                Client client = fetchClientInDB(rent.getClientRun());
+                if (!client.getStatus().equals("Restringido")) {
+                    try {
+                        client.setStatus("Restringido");
+                        restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+                    } catch (RestClientException e) {
+                        throw new RuntimeException("Error actualizando datos del cliente.");
+                    }
+                }
+            }
+        }
     }
 
     //Private methods
@@ -141,19 +320,18 @@ public class RentService {
         return restTemplate.getForObject("http://inventory-service/inventory/tool-item/" + id, ToolItem.class);
     }
 
-    private void updateStatus(RentXToolItemEntity item){
+    private void updateStatus(ToolItem toolItem, String status){
         try {
-            ToolItem toolItem = getToolItem(item.getToolItemId());
-            toolItem.setStatus("PRESTADA");
+            toolItem.setStatus(status);
             restTemplate.put("http://inventory-service/inventory/tool-item/" + toolItem.getId(), toolItem, ToolItem.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
         }
     }
 
-    private void updateStock(Long toolTypeId) {
+    private void updateAvailableStock(Long toolTypeId, Integer quantity) {
         try {
-            ChangeStockRequest changeStockRequest = new ChangeStockRequest(toolTypeId, -1);
+            ChangeStockRequest changeStockRequest = new ChangeStockRequest(toolTypeId, quantity);
             restTemplate.put("http://inventory-service/inventory/tool-type/change-available-stock", changeStockRequest, ToolType.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando stock en inventario. Datos inconsistentes.");
@@ -169,10 +347,10 @@ public class RentService {
         }
     }
 
-    private void updateActiveRents(Client client) {
+    private void updateActiveRents(Client client, Integer quantity) {
         try {
-            client.setActiveRents(client.getActiveRents() + 1);
-            restTemplate.put("http://client-service/client/" + client.getRun(), Client.class);
+            client.setActiveRents(client.getActiveRents() + quantity);
+            restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando datos del cliente.");
         }
