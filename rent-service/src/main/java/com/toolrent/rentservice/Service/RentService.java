@@ -35,33 +35,33 @@ public class RentService {
         this.restTemplate = restTemplate;
     }
 
-    public List<RentEntity> getAllLoans(){
+    public List<RentEntity> getAllRents(){
         return rentRepository.findAllWithDetails();
     }
 
-    public Optional<RentEntity> getLoanById(Long id){
+    public Optional<RentEntity> getRentById(Long id){
         return rentRepository.findByIdWithDetails(id);
     }
 
-    public List<RentEntity> getActiveLoansByClient(String clientRun){
+    public List<RentEntity> getActiveRentsByClient(String clientRun){
         return rentRepository.findActiveLoansByClient(clientRun);
     }
 
-    public List<RentEntity> getLoanByStatus(String status){
+    public List<RentEntity> getRentByStatus(String status){
         return rentRepository.findByStatusWithDetails(status);
     }
 
-    public List<RentEntity> getLoanByValidity(String validity){
+    public List<RentEntity> getRentByValidity(String validity){
         return rentRepository.findByValidity(validity);
     }
 
-    public List<Map<String, Object>> getMostLoanedTools(LocalDate startDate, LocalDate endDate){
+    public List<Map<String, Object>> getMostRentedTools(LocalDate startDate, LocalDate endDate){
         List<Object[]> results = rentXToolItemService.getMostLoanedToolsBetweenDates(startDate, endDate);
 
         //The shape of the object is changed to display the name of the tool and the number of loans
         List<Map<String, Object>> loanedToolList = results.stream()
                 .map(r -> Map.of(
-                        "toolName", (String) r[0],
+                        "toolName", r[0],
                         "totalLoans", r[1]
                 ))
                 .toList();
@@ -92,13 +92,35 @@ public class RentService {
         return rentRepository.existsById(id);
     }
 
+    public boolean existsClient(String clientRun) {
+        try {
+            getClient(clientRun);
+            return true;
+        } catch (HttpClientErrorException.NotFound e) {
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Error inesperado verificando cliente");
+        }
+    }
+
+    public boolean existsEmployee(String employeeRun){
+        try {
+            getEmployee(employeeRun);
+            return true;
+        } catch (HttpClientErrorException.NotFound e) {
+            return false;
+        } catch (Exception e) {
+            throw new RuntimeException("Error inesperado verificando empleado");
+        }
+    }
+
     @Transactional
-    public RentEntity createLoan(RentEntity rent, String employeeRun) {
+    public RentEntity createRent(RentEntity rent) { //, String employeeRun)
         //The employee is searched in the database
-        Employee employee = fetchEmployeeInDB(employeeRun);
+        Employee employee = fetchEmployeeInDB(rent.getEmployeeRun());
 
         //The client is searched in the database
-        Client client = fetchClientInDB(employeeRun);
+        Client client = fetchClientInDB(rent.getClientRun());
 
         //Check that the client doesn't have a debt
         if (client.getStatus().equals("Restringido") || client.getDebt() > 0) {
@@ -195,9 +217,9 @@ public class RentService {
     }
 
     @Transactional
-    public RentEntity returnLoan(Long id, RentEntity rent){
+    public RentEntity returnRent(Long id, RentEntity rent){
         //The rent is searched in the database
-        Optional<RentEntity> dbLoan = getLoanById(id);
+        Optional<RentEntity> dbLoan = getRentById(id);
         RentEntity dbRentEnt = dbLoan.get();
 
         //The client is searched in the database
@@ -316,6 +338,14 @@ public class RentService {
     }
 
     //Private methods
+    private Client getClient(String run){
+        return restTemplate.getForObject("http://client-service/client/" + run, Client.class);
+    }
+
+    private Employee getEmployee(String run){
+        return restTemplate.getForObject("http://employee-service/employee/" + run, Employee.class);
+    }
+
     private ToolItem getToolItem(Long id) {
         return restTemplate.getForObject("http://inventory-service/inventory/tool-item/" + id, ToolItem.class);
     }
@@ -359,7 +389,7 @@ public class RentService {
     private Employee fetchEmployeeInDB(String run) {
         Employee employee;
         try {
-            employee = restTemplate.getForObject("http://employee-service/employee/" + run, Employee.class);
+            employee = getEmployee(run);
         } catch (HttpClientErrorException.NotFound e) {
             //The employee microservice responded, but said that the employee doesn't exist
             throw new RuntimeException("Empleado no encontrado con RUN: " + run);
@@ -378,7 +408,7 @@ public class RentService {
     private Client fetchClientInDB(String run) {
         Client client;
         try {
-            client = restTemplate.getForObject("http://client-service/client/" + run, Client.class);
+            client = getClient(run);
         } catch (HttpClientErrorException.NotFound e) {
             //The client microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Cliente no encontrado con RUN: " + run);
