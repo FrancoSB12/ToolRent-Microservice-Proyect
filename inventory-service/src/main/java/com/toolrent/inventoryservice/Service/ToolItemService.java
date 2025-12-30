@@ -233,8 +233,6 @@ public class ToolItemService {
         return toolItemRepository.save(dbToolItemEnt);
     }
 
-
-
     public boolean deleteToolItemById(Long id){
         if(toolItemRepository.existsById(id)){
             toolItemRepository.deleteById(id);
