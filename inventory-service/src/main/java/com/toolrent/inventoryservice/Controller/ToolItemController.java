@@ -16,7 +16,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/inventory/tool-item")
-@CrossOrigin("*")
 public class ToolItemController {
     private final ToolItemService toolItemService;
     private final ToolTypeService toolTypeService;

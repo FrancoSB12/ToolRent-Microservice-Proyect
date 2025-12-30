@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/inventory/tool-type")
-@CrossOrigin("*")
 public class ToolTypeController {
     private final ToolTypeService toolTypeService;
     private final ToolValidationService toolValidationService;

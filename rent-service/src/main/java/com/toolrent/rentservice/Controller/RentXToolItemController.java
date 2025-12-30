@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/rent-x-tool-item")
-@CrossOrigin("*")
 public class RentXToolItemController {
     private final RentXToolItemService rentXToolItemService;
 

@@ -16,7 +16,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/rent")
-@CrossOrigin("*")
 public class RentController {
     private final RentService rentService;
     private final RentValidationService rentValidationService;
