@@ -98,7 +98,7 @@ public class ClientController {
         }
     }
 
-    @PutMapping("/Charge")
+    @PutMapping("/charge")
     public ResponseEntity<String> chargeClient(@RequestBody ChargeClientFeeRequest request){
         if(request == null){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

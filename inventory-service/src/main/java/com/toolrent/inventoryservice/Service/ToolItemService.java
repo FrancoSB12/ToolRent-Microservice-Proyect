@@ -1,15 +1,22 @@
 package com.toolrent.inventoryservice.Service;
 
+import com.toolrent.inventoryservice.DTO.ChargeClientFeeRequest;
 import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
 import com.toolrent.inventoryservice.Entity.ToolItemEntity;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
 import com.toolrent.inventoryservice.Enum.ToolStatus;
+import com.toolrent.inventoryservice.Model.Client;
+import com.toolrent.inventoryservice.Model.Rent;
+import com.toolrent.inventoryservice.Model.RentXToolItem;
 import com.toolrent.inventoryservice.Repository.ToolItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -167,6 +174,65 @@ public class ToolItemService {
     }
 
     //This method is used when a tool is returned damaged
+    @Transactional
+    public ToolItemEntity evaluateDamage(Long toolId, ToolItemEntity toolItemFromFront){
+        //The tool is searched in the database
+        Optional<ToolItemEntity> dbToolItem = getToolItemById(toolId);
+        ToolItemEntity dbToolItemEnt = dbToolItem.get();
+
+        List<RentXToolItem> toolItemHistory = getToolItemHistoryInDB(toolId);
+
+        if(toolItemHistory.isEmpty()){
+            throw new RuntimeException("Esta herramienta nunca ha sido prestada, no se puede cobrar a nadie");
+        }
+
+        //The first one in the list is the most recent loan that the tool has
+
+        Rent lastRent = fetchRentInDB(toolItemHistory.get(0).getRentId());
+        Client clientToCharge = fetchClientInDB(lastRent.getClientRun());
+
+        if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
+            processIrreparableTool(dbToolItemEnt, toolItemFromFront.getDamageLevel());
+
+        } else if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.NO_DANADA){
+            //This is the case where it was false that the tool was damaged
+            dbToolItemEnt.setStatus(ToolStatus.DISPONIBLE);
+            dbToolItemEnt.setDamageLevel(ToolDamageLevel.NO_DANADA);
+
+            toolTypeService.changeAvailableStock(dbToolItemEnt.getToolType().getId(), 1);
+
+            if(clientToCharge.getDebt() == 0){
+                try {
+                    clientToCharge.setStatus("Activo");
+                    restTemplate.put("http://client-service/client/" + clientToCharge.getRun(), clientToCharge, Client.class);
+                } catch (RestClientException e) {
+                    throw new RuntimeException("Error actualizando datos del cliente.");
+                }
+            }
+            return toolItemRepository.save(dbToolItemEnt);
+
+        } else{
+            //It's ensured that the tool has the corresponding status and damage level
+            dbToolItemEnt.setStatus(ToolStatus.EN_REPARACION);
+            dbToolItemEnt.setDamageLevel(toolItemFromFront.getDamageLevel());
+        }
+
+        //Replacement value or repair charge is applied to the client and creates the associated kardex
+        if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getReplacementValue());
+            restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
+            createKardex(dbToolItemEnt.getToolType().getId(), "BAJA");
+
+        } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getDamageFee());
+            restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
+            createKardex(dbToolItemEnt.getToolType().getId(), "REPARACION");
+        }
+
+        //The available stock isn't reduced since is already reduced by the loan
+        return toolItemRepository.save(dbToolItemEnt);
+    }
+
 
 
     public boolean deleteToolItemById(Long id){
@@ -198,4 +264,72 @@ public class ToolItemService {
         dbToolItem.setToolType(updatedToolType);
     }
 
+    private List<RentXToolItem> getToolItemHistoryInDB(Long toolItemId) {
+        List<RentXToolItem> rentXToolItem;
+        try {
+            rentXToolItem = restTemplate.getForObject("http://rent-service/rent-x-tool-item/tool-history/" + toolItemId, List.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The client microservice responded, but said that the client doesn't exist
+            throw new RuntimeException("Herramienta no encontrada con ID: " + toolItemId);
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The client microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de clientes: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The client microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de clientes está caído o no responde.");
+        }
+
+        return rentXToolItem;
+    }
+
+    private Client fetchClientInDB(String run) {
+        Client client;
+        try {
+            client = restTemplate.getForObject("http://client-service/client/" + run, Client.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The client microservice responded, but said that the client doesn't exist
+            throw new RuntimeException("Cliente no encontrado con RUN: " + run);
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The client microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de clientes: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The client microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de clientes está caído o no responde.");
+        }
+
+        return client;
+    }
+
+    private Rent fetchRentInDB(Long rentId) {
+        Rent rent;
+        try {
+            rent = restTemplate.getForObject("http://rent-service/rent/" + rentId, Rent.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The client microservice responded, but said that the client doesn't exist
+            throw new RuntimeException("Préstamo no encontrado con ID: " + rentId);
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The client microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de clientes: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The client microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de clientes está caído o no responde.");
+        }
+
+        return rent;
+    }
+
+    private void createKardex(Long toolTypeId, String operationType) {
+        try {
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeId, operationType, 1);
+            restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
+        } catch (RestClientException e) {
+            throw new RuntimeException("Error creando kardex. Datos inconsistentes.");
+        }
+    }
 }

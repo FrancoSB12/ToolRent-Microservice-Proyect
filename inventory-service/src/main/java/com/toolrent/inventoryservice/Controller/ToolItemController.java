@@ -157,6 +157,27 @@ public class ToolItemController {
         return new ResponseEntity<>(disabledTool, HttpStatus.OK);
     }
 
+    @PutMapping("/evaluate-damage/{toolId}")
+    public ResponseEntity<?> evaluateDamage(@PathVariable Long toolId, @RequestBody ToolItemEntity toolItem) {
+        //It's verified that the tool item exist in the database
+        Optional<ToolItemEntity> dbToolItem = toolItemService.getToolItemById(toolId);
+        if (dbToolItem.isEmpty()) {
+            return new ResponseEntity<>("La herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        if(dbToolItem.get().getStatus() == ToolStatus.PRESTADA){
+            return new ResponseEntity<>("La herramienta está en préstamo, no se puede evaluar su daño", HttpStatus.BAD_REQUEST);
+        }
+
+        if (toolValidationService.isInvalidDamageLevel(toolItem.getDamageLevel().toString())) {
+            return new ResponseEntity<>("Nivel de daño de la herramienta inválido", HttpStatus.BAD_REQUEST);
+        }
+
+        ToolItemEntity evaluatedTool = toolItemService.evaluateDamage(toolId, toolItem);
+        return new ResponseEntity<>(evaluatedTool, HttpStatus.OK);
+    }
+
+
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteToolItemById(@PathVariable Long id){
         boolean deletedToolItem = toolItemService.deleteToolItemById(id);
