@@ -33,7 +33,7 @@ public class RentEntity {
     private LocalTime returnTime;
 
     @Column(name = "late_return_fee", nullable = false)
-    private Integer lateReturnFee = 0;
+    private Integer lateReturnFee;
 
     //The initial value of the status is always "Activo"
     @Column(name = "status", nullable = false)

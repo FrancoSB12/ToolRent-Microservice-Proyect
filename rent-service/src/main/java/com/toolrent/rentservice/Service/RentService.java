@@ -1,5 +1,6 @@
 package com.toolrent.rentservice.Service;
 
+import com.toolrent.rentservice.DTO.ApplyLateFeeRequest;
 import com.toolrent.rentservice.DTO.ChangeStockRequest;
 import com.toolrent.rentservice.DTO.CreateKardexRequest;
 import com.toolrent.rentservice.Entity.RentEntity;
@@ -19,7 +20,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -191,6 +191,10 @@ public class RentService {
         rent.setEmployeeRun(employee.getRun());
         rent.setEmployeeNameSnapshot(employee.getName());
 
+        //Set the late return fee
+        Integer lateReturnFee = fetchLateReturnFeeInDB();
+        rent.setLateReturnFee(lateReturnFee);
+
         RentEntity savedLoan = rentRepository.save(rent);
 
         //Create and save the associated kardex for each tool, reduce the tool stock and save the relationships
@@ -278,15 +282,8 @@ public class RentService {
         //If the client returned the tools late
         if(dbRentEnt.getReturnDate().isBefore(LocalDate.now())){
             //Late return fee calculation and change of status to the client
-            int daysBetween = (int) ChronoUnit.DAYS.between(dbRentEnt.getReturnDate(), LocalDate.now());
-            Integer lateReturnFee = daysBetween * dbRentEnt.getLateReturnFee();
-
-            try {
-                client.setDebt(client.getDebt() + lateReturnFee);
-                restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
-            } catch (RestClientException e) {
-                throw new RuntimeException("Error actualizando datos del cliente.");
-            }
+            ApplyLateFeeRequest lateFeeRequest = new ApplyLateFeeRequest(dbRentEnt.getReturnDate(), dbRentEnt.getLateReturnFee(), client);
+            restTemplate.put("http://fee-service/fee/apply-late-return-fee", lateFeeRequest, Integer.class);
 
             dbRentEnt.setValidity("Atrasado");
         } else{
@@ -295,22 +292,6 @@ public class RentService {
 
         dbRentEnt.setReturnTime(LocalTime.now());
         dbRentEnt.setStatus("Finalizado");
-        return rentRepository.save(dbRentEnt);
-    }
-
-    public RentEntity updateLateReturnFee(Long id, RentEntity rent){
-        //The rent is searched in the database
-        Optional<RentEntity> dbRent = rentRepository.findById(id);
-        RentEntity dbRentEnt = dbRent.get();
-
-        //Since only the late return fine can be updated, only that is reviewed
-        if(rent.getLateReturnFee() != null){
-            if(rent.getLateReturnFee() < 0){
-                throw new IllegalArgumentException("Monto de multa por atraso incorrecta");
-            }
-            dbRentEnt.setLateReturnFee(rent.getLateReturnFee());
-        }
-
         return rentRepository.save(dbRentEnt);
     }
 
@@ -465,5 +446,25 @@ public class RentService {
         }
 
         return toolType;
+    }
+
+    private Integer fetchLateReturnFeeInDB() {
+        Integer lateReturnFee;
+        try {
+            lateReturnFee = restTemplate.getForObject("http://fee/current-late-return-fee", Integer.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The fee microservice responded, but said that the client doesn't exist
+            throw new RuntimeException("Multa por atraso no encontrada");
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The fee microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de multas: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The fee microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de multas está caído o no responde.");
+        }
+
+        return lateReturnFee;
     }
 }

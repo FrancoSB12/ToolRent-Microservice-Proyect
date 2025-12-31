@@ -154,27 +154,6 @@ public class RentController {
     }
 
     @PreAuthorize("hasAnyRole('Employee','Admin')")
-    @PutMapping("/late-return-fee/{id}")
-    public ResponseEntity<?> updateLateReturnFee(@PathVariable Long id, @RequestBody RentEntity rent){
-        try {
-            //Verify that the rent has an id and the id isn't null
-            if (rent.getId() == null) {
-                return new ResponseEntity<>("El id no puede estar vacío o ser nulo", HttpStatus.BAD_REQUEST);
-            }
-
-            //Verify that the rent exist in the database
-            if (!rentService.exists(id)) {
-                return new ResponseEntity<>("El préstamo no existe en la base de datos", HttpStatus.NOT_FOUND);
-            }
-
-            RentEntity updatedRent = rentService.updateLateReturnFee(id, rent);
-            return new ResponseEntity<>(updatedRent, HttpStatus.OK);
-        } catch (Exception ex){
-            return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
-        }
-    }
-
-    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/update-late-statuses")
     public ResponseEntity<Void> checkAndSetLateStatuses(){
         rentService.checkAndSetLateStatuses();
