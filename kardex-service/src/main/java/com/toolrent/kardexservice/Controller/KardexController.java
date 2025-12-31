@@ -32,6 +32,13 @@ public class KardexController {
     }
 
     //Get by tool name
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @GetMapping("/tool/{toolName}")
+    public ResponseEntity<?> getKardexByToolName(@PathVariable String toolName) {
+        return kardexService.getKardexByToolTypeName(toolName)
+                .map(kardexes -> new ResponseEntity<>(kardexes, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
 
     @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/by-date")

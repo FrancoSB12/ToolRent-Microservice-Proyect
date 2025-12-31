@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateKardexRequest {
-    private Long toolTypeId;
+    private String toolTypeName;
     private String operationType;
     private Integer stock;
 }

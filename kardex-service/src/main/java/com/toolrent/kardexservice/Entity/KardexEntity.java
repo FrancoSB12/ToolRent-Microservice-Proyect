@@ -30,6 +30,6 @@ public class KardexEntity {
     @Column(name = "stock_involved", nullable = false)
     private Integer stockInvolved;
 
-    @Column(name = "tool_type_id", nullable = false)
-    private Long toolTypeId;
+    @Column(name = "tool_type_name", nullable = false)
+    private String toolTypeName;
 }

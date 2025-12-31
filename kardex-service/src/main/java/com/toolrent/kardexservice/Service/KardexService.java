@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class KardexService {
@@ -22,7 +23,9 @@ public class KardexService {
         return kardexRepository.findAll();
     }
 
-    //Aqui iria el get by tooltype name o id
+    public Optional<List<KardexEntity>> getKardexByToolTypeName(String toolTypeName){
+        return kardexRepository.findByToolTypeName(toolTypeName);
+    }
 
     public List<KardexEntity> getKardexByDateRange(LocalDate startDate, LocalDate endDate){
         return kardexRepository.findByDateBetween(startDate, endDate);
@@ -33,7 +36,7 @@ public class KardexService {
         kardex.setOperationType(request.getOperationType());
         kardex.setDate(LocalDate.now());
         kardex.setStockInvolved(request.getStock());
-        kardex.setToolTypeId(request.getToolTypeId());
+        kardex.setToolTypeName(request.getToolTypeName());
         kardexRepository.save(kardex);
     }
 }

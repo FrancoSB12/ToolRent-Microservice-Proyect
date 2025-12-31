@@ -54,9 +54,7 @@ public class ToolItemService {
         ToolItemEntity savedToolItem = toolItemRepository.save(newToolItem);
 
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(managedToolType.getId(), "REGISTRO", 1);
-        String url = "http://kardex-service/kardex/entry";
-        restTemplate.postForObject(url, createKardexRequest, Void.class);
+        createKardex(managedToolType.getName(), "REGISTRO", 1);
 
         return savedToolItem;
     }
@@ -149,9 +147,7 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Creates the associated kardex
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(updatedToolType.getId(), "BAJA", 1);
-            String url = "http://kardex-service/kardex/entry";
-            restTemplate.postForObject(url, createKardexRequest, Void.class);
+            createKardex(updatedToolType.getName(), "BAJA", -1);
 
         } else {
             //Any other type of damage sends the tool to "En reparación"
@@ -166,9 +162,7 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Create and save the associated kardex
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(updatedToolType.getId(), "REPARACION", 1);
-            String url = "http://kardex-service/kardex/entry";
-            restTemplate.postForObject(url, createKardexRequest, Void.class);
+            createKardex(updatedToolType.getName(), "REPARACION", -1);
         }
         return toolItemRepository.save(dbToolItemEnt);
     }
@@ -187,7 +181,6 @@ public class ToolItemService {
         }
 
         //The first one in the list is the most recent loan that the tool has
-
         Rent lastRent = fetchRentInDB(toolItemHistory.get(0).getRentId());
         Client clientToCharge = fetchClientInDB(lastRent.getClientRun());
 
@@ -221,12 +214,11 @@ public class ToolItemService {
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getReplacementValue());
             restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
-            createKardex(dbToolItemEnt.getToolType().getId(), "BAJA");
+            createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1);
 
         } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getDamageFee());
             restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
-            createKardex(dbToolItemEnt.getToolType().getId(), "REPARACION");
         }
 
         //The available stock isn't reduced since is already reduced by the loan
@@ -322,9 +314,9 @@ public class ToolItemService {
         return rent;
     }
 
-    private void createKardex(Long toolTypeId, String operationType) {
+    private void createKardex(String toolTypeName, String operationType, Integer stock) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeId, operationType, 1);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock);
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

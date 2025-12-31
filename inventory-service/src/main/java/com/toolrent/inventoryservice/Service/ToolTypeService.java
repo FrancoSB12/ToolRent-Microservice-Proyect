@@ -1,6 +1,7 @@
 package com.toolrent.inventoryservice.Service;
 
 import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
+import com.toolrent.inventoryservice.DTO.UpdateToolTypeRequest;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Repository.ToolTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,7 @@ public class ToolTypeService {
         ToolTypeEntity savedToolType = toolTypeRepository.save(newToolType);
 
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getId(), "REGISTRO", 0);
+        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0);
         String url = "http://kardex-service/kardex/entry";
         restTemplate.postForObject(url, createKardexRequest, Void.class);
 
@@ -53,64 +54,43 @@ public class ToolTypeService {
         return toolTypeRepository.existsById(id);
     }
 
-    public ToolTypeEntity updateToolType(Long id, ToolTypeEntity toolType){
+    public ToolTypeEntity updateToolType(Long id, UpdateToolTypeRequest toolTypeRequest){
         Optional<ToolTypeEntity> dbToolType = getToolTypeById(id);
         ToolTypeEntity dbToolTypeEnt = dbToolType.get();
 
-        if(toolType.getName() != null){
-            if(toolValidationService.isInvalidName(toolType.getName())){
+        if(toolTypeRequest.getName() != null){
+            if(toolValidationService.isInvalidName(toolTypeRequest.getName())){
                 throw new IllegalArgumentException("Nombre de la herramienta inválido");
             }
-            dbToolTypeEnt.setName(toolType.getName());
+            dbToolTypeEnt.setName(toolTypeRequest.getName());
         }
 
-        if(toolType.getCategory() != null){
-            if(toolValidationService.isInvalidName(toolType.getCategory())){
+        if(toolTypeRequest.getCategory() != null){
+            if(toolValidationService.isInvalidName(toolTypeRequest.getCategory())){
                 throw new IllegalArgumentException("Categoría de la herramienta inválido");
             }
-            dbToolTypeEnt.setCategory(toolType.getCategory());
+            dbToolTypeEnt.setCategory(toolTypeRequest.getCategory());
         }
 
-        if(toolType.getModel() != null){
-            if(toolValidationService.isInvalidToolName(toolType.getModel())){
+        if(toolTypeRequest.getModel() != null){
+            if(toolValidationService.isInvalidToolName(toolTypeRequest.getModel())){
                 throw new IllegalArgumentException("Modelo de la herramienta inválido");
             }
-            dbToolTypeEnt.setModel(toolType.getModel());
+            dbToolTypeEnt.setModel(toolTypeRequest.getModel());
         }
 
-        if(toolType.getReplacementValue() != null){
-            if(toolValidationService.isInvalidStockOrFee(toolType.getReplacementValue())){
-                throw new IllegalArgumentException("Valor de reposición de la herramienta inválida");
-            }
-            dbToolTypeEnt.setReplacementValue(toolType.getReplacementValue());
-        }
-
-        if(toolType.getTotalStock() != null){
-            if(toolValidationService.isInvalidStockOrFee(toolType.getTotalStock())){
+        if(toolTypeRequest.getTotalStock() != null){
+            if(toolValidationService.isInvalidStockOrFee(toolTypeRequest.getTotalStock())){
                 throw new IllegalArgumentException("Valor del stock total de la herramienta inválido");
             }
-            dbToolTypeEnt.setTotalStock(toolType.getTotalStock());
+            dbToolTypeEnt.setTotalStock(toolTypeRequest.getTotalStock());
         }
 
-        if(toolType.getAvailableStock() != null){
-            if(toolValidationService.isInvalidStockOrFee(toolType.getAvailableStock())){
+        if(toolTypeRequest.getAvailableStock() != null){
+            if(toolValidationService.isInvalidStockOrFee(toolTypeRequest.getAvailableStock())){
                 throw new IllegalArgumentException("Valor del stock disponible de la herramienta inválido");
             }
-            dbToolTypeEnt.setAvailableStock(toolType.getAvailableStock());
-        }
-
-        if(toolType.getRentalFee() != null){
-            if(toolValidationService.isInvalidStockOrFee(toolType.getRentalFee())){
-                throw new IllegalArgumentException("Tarifa de arriendo de la herramienta invalida");
-            }
-            dbToolTypeEnt.setRentalFee(toolType.getRentalFee());
-        }
-
-        if(toolType.getDamageFee() != null){
-            if(toolValidationService.isInvalidStockOrFee(toolType.getDamageFee())){
-                throw new IllegalArgumentException("Tarifa de daño de la herramienta invalida");
-            }
-            dbToolTypeEnt.setDamageFee(toolType.getDamageFee());
+            dbToolTypeEnt.setAvailableStock(toolTypeRequest.getAvailableStock());
         }
 
         return toolTypeRepository.save(dbToolTypeEnt);

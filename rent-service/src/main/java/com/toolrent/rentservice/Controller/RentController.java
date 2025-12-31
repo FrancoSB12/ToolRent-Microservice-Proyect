@@ -48,12 +48,12 @@ public class RentController {
         }
 
         //It's verified that the client exist
-        if(rentService.existsClient(rent.getClientRun())){
+        if(!rentService.existsClient(rent.getClientRun())){
             return new ResponseEntity<>("Cliente no encontrado en la base de datos", HttpStatus.NOT_FOUND);
         }
 
         //It's verified that the employee exist
-        if(rentService.existsEmployee(currentEmployeeRun)){
+        if(!rentService.existsEmployee(currentEmployeeRun)){
             return new ResponseEntity<>("Empleado no encontrado en la base de datos", HttpStatus.NOT_FOUND);
         }
 
