@@ -180,7 +180,7 @@ public class ToolItemService {
             throw new RuntimeException("Esta herramienta nunca ha sido prestada, no se puede cobrar a nadie");
         }
 
-        //The first one in the list is the most recent loan that the tool has
+        //The first one in the list is the most recent rent that the tool has
         Rent lastRent = fetchRentInDB(toolItemHistory.get(0).getRentId());
         Client clientToCharge = fetchClientInDB(lastRent.getClientRun());
 
@@ -212,16 +212,16 @@ public class ToolItemService {
 
         //Replacement value or repair charge is applied to the client and creates the associated kardex
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
-            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getReplacementValue());
-            restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getReplacementValue());
+            restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
             createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1);
 
         } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
-            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge.getRun(), dbToolItemEnt.getToolType().getDamageFee());
-            restTemplate.put("http://client-service/client/Charge", clientFeeRequest, Void.class);
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getDamageFee());
+            restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
         }
 
-        //The available stock isn't reduced since is already reduced by the loan
+        //The available stock isn't reduced since is already reduced by the rent
         return toolItemRepository.save(dbToolItemEnt);
     }
 

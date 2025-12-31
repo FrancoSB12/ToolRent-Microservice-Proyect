@@ -1,5 +1,6 @@
 package com.toolrent.inventoryservice.DTO;
 
+import com.toolrent.inventoryservice.Model.Client;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ChargeClientFeeRequest {
-    private String clientRun;
+    private Client client;
     private Integer fee;
 }

@@ -13,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @Service
 public class FeeService {
@@ -57,6 +58,14 @@ public class FeeService {
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando datos del cliente.");
         }
+    }
+
+    @Transactional
+    public void chargeClientFee(Client client, Integer fee) {
+        client.setDebt(client.getDebt() + fee);
+        client.setStatus("Restringido");
+
+        restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
     }
 
 }

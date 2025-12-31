@@ -99,17 +99,6 @@ public class ClientService {
         return clientRepository.save(dbClient);
     }
 
-    public void chargeClientFee(String run, Integer fee) {
-        //The client is searched in the database
-        Optional<ClientEntity> dbClient = clientRepository.findById(run);
-        ClientEntity dbClientEnt = dbClient.get();
-
-        dbClientEnt.setDebt(dbClientEnt.getDebt() + fee);
-        dbClientEnt.setStatus("Restringido");
-
-        clientRepository.save(dbClientEnt);
-    }
-
     public boolean deleteClientByRun(String run){
         if(clientRepository.existsById(run)){
             clientRepository.deleteById(run);

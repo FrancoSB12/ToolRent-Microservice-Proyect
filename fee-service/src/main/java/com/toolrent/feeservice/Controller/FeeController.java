@@ -1,6 +1,7 @@
 package com.toolrent.feeservice.Controller;
 
 import com.toolrent.feeservice.DTO.ApplyLateFeeRequest;
+import com.toolrent.feeservice.DTO.ChargeClientFeeRequest;
 import com.toolrent.feeservice.DTO.UpdateLateReturnFeeRequest;
 import com.toolrent.feeservice.Service.FeeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,5 +43,18 @@ public class FeeController {
     public ResponseEntity<?> applyLateReturnFee(@RequestBody ApplyLateFeeRequest applyLateFeeRequest) {
         feeService.applyLateReturnFee(applyLateFeeRequest);
         return new ResponseEntity<>("Multa por atraso aplicada al cliente", HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @PutMapping("/charge-client")
+    public ResponseEntity<String> chargeClient(@RequestBody ChargeClientFeeRequest request){
+        if(request == null){
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+
+        //The client comes from the DB, so it isn't needed to search it
+
+        feeService.chargeClientFee(request.getClient(), request.getFee());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

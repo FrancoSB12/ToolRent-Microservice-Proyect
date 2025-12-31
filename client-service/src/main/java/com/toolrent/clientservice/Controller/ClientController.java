@@ -1,6 +1,5 @@
 package com.toolrent.clientservice.Controller;
 
-import com.toolrent.clientservice.DTO.ChargeClientFeeRequest;
 import com.toolrent.clientservice.Entity.ClientEntity;
 import com.toolrent.clientservice.Service.ClientService;
 import com.toolrent.clientservice.Service.ClientValidationService;
@@ -101,21 +100,6 @@ public class ClientController {
         } catch (Exception ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
-    }
-
-    @PreAuthorize("hasAnyRole('Employee','Admin')")
-    @PutMapping("/charge")
-    public ResponseEntity<String> chargeClient(@RequestBody ChargeClientFeeRequest request){
-        if(request == null){
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-
-        if(!clientService.exists(request.getClientRun())){
-            return new ResponseEntity<>("El cliente no existe en la base de datos", HttpStatus.NOT_FOUND);
-        }
-
-        clientService.chargeClientFee(request.getClientRun(), request.getFee());
-        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('Admin')")
