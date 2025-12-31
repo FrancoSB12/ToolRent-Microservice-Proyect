@@ -1,0 +1,45 @@
+:root {
+  /*Main pallette */
+  --primary-color: #212529;
+  --primary-color-hover: #343A40;
+  --card-color: #F4F4F4;
+
+  /* Accents */
+  --accent-color: #FFC107;
+
+  /* Neutral */
+  --background-color: #FFFFFF;
+  --background-color-sec: #E9ECEF;
+  --text-color: #212529;
+  --text-color-light: #FFFFFF;
+
+  /* status colors */
+  --success-color: #28A745;
+  --warning-color: #FFC107;
+  --error-color: #eb031a;
+  --in-maintenance-color: #5140e9;
+
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body with flexbox */
+body {
+  font-family: system-ui, sans-serif;
+  background-color: var(--background-color-sec);
+  min-height: 100vh;
+
+  display: flex;
+  flex-direction: column;
+}
+
+/* Root with flexbox */
+#root {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}

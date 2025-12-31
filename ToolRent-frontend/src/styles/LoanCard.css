@@ -1,0 +1,107 @@
+.loan-card {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    min-width: 280px;
+}
+
+.loan-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* ====================================
+   Header: Info del Cliente
+   ==================================== */
+.loan-card-header {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #eee;
+}
+
+.loan-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: #007bff; /* Azul primario para avatares de préstamos */
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.loan-info h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+    line-height: 1.2;
+}
+
+.loan-info .loan-rut {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 2px;
+    display: block;
+}
+
+.loan-card-body {
+    padding: 15px;
+    flex-grow: 1;
+}
+
+.loan-card-body .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    padding: 5px 0;
+    border-bottom: 1px dotted #e0e0e0;
+}
+
+.loan-card-body .detail-row:last-child {
+    border-bottom: none;
+}
+
+.loan-card-body .detail-row strong {
+    color: #555;
+    font-weight: 600;
+}
+
+.loan-card-footer {
+    padding: 10px 15px;
+    text-align: right;
+    border-top: 1px solid #f0f0f0;
+    background-color: #fafafa;
+}
+
+.loan-status-badge {
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.loan-status-active {
+    background-color: #28a745; /* Verde */
+}
+
+.loan-status-restricted {
+    background-color: #dc3545; /* Rojo */
+}
+
+.loan-status-default {
+    background-color: #6c757d; /* Gris */
+}

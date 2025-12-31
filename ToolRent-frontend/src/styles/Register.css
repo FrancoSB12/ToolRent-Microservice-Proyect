@@ -1,0 +1,99 @@
+.register-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2rem;
+  max-width: 900px;
+  margin: 2rem auto;
+  text-align: left;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="date"],
+.form-group select {
+  padding: 1rem 1.2rem;
+  font-size: 1.1rem;
+  height: 56px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f4f4f4;
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1em;
+}
+.form-group select option {
+  color: var(--text-color, #212529); 
+  background-color: #fff;
+}
+
+.form-group input::placeholder {
+  color: #888;
+  opacity: 1;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.form-error {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+.register-submit-btn {
+  background-color: var(--primary-color);
+  color: var(--text-color-light);
+  border: none;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.register-submit-btn:hover {
+  filter: brightness(0.9);
+}
+
+.register-submit-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  filter: brightness(0.9); 
+}
+
+.full-page-content {
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  padding: 2rem;
+  flex-grow: 1;
+  text-align: center;
+}
+
+.MuiAutocomplete-inputRoot {
+  height: 56px;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex;
+  align-items: center;
+}

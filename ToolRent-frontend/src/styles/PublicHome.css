@@ -1,0 +1,17 @@
+.public-home-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--accent-color);
+}
+
+.public-main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-color);
+}
