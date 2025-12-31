@@ -7,6 +7,7 @@ import com.toolrent.inventoryservice.Service.ToolValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ToolTypeController {
     }
 
     //Create tool type
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping
     public ResponseEntity<?> createToolType(@RequestBody ToolTypeEntity toolType){
         //First, it's verified that the tool type doesn't exist
@@ -61,12 +63,14 @@ public class ToolTypeController {
     }
 
     //Get tool type
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<List<ToolTypeEntity>> getAllToolTypes(){
         List<ToolTypeEntity> toolTypes = toolTypeService.getAllToolTypes();
         return new ResponseEntity<>(toolTypes, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{id}")
     public ResponseEntity<ToolTypeEntity> getToolTypeById(@PathVariable Long id){
         return toolTypeService.getToolTypeById(id)
@@ -74,6 +78,7 @@ public class ToolTypeController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/name/{name}")
     public ResponseEntity<ToolTypeEntity> getToolTypeByName(@PathVariable String name) {
         return toolTypeService.getToolTypeByName(name)
@@ -82,6 +87,7 @@ public class ToolTypeController {
     }
 
     //Update tool
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateToolType(@PathVariable Long id, @RequestBody ToolTypeEntity toolType){
         try {
@@ -103,6 +109,7 @@ public class ToolTypeController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/change-available-stock")
     public ResponseEntity<?> changeAvailableStock(@RequestBody ChangeStockRequest request){
         Long id = request.getId();
@@ -117,6 +124,7 @@ public class ToolTypeController {
         return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/change-total-stock")
     public ResponseEntity<?> changeTotalStock(@RequestBody ChangeStockRequest request){
         //Verify that the tool type exist in the database
@@ -130,6 +138,7 @@ public class ToolTypeController {
         return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/increase-both-stock")
     public ResponseEntity<?> increaseBothStock(@RequestBody ChangeStockRequest request){
         //Verify that the tool type exist in the database
@@ -148,6 +157,7 @@ public class ToolTypeController {
     }
 
     //Delete tool type
+    @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteToolTypeById(@PathVariable Long id){
         boolean deletedToolType = toolTypeService.deleteToolTypeById(id);

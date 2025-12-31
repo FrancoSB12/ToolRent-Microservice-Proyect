@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -27,14 +30,14 @@ public class RentController {
     }
 
     //Create loan
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PostMapping
-    public ResponseEntity<?> createRent(@RequestBody RentEntity rent){  //, Authentication authentication)
+    public ResponseEntity<?> createRent(@RequestBody RentEntity rent, Authentication authentication){
         //It's verified that the rent doesn't exist
         if(rent.getId() != null && rentService.exists(rent.getId())){
             return new ResponseEntity<>("El préstamo ya existe en la base de datos", HttpStatus.CONFLICT);
         }
 
-        /*
         String currentEmployeeRun;
         //This is to get the employee run from the keycloak
         if (authentication.getPrincipal() instanceof Jwt) {
@@ -43,7 +46,6 @@ public class RentController {
         } else {
             currentEmployeeRun = authentication.getName();
         }
-         */
 
         //It's verified that the client exist
         if(rentService.existsClient(rent.getClientRun())){
@@ -51,7 +53,7 @@ public class RentController {
         }
 
         //It's verified that the employee exist
-        if(rentService.existsEmployee(rent.getEmployeeRun())){
+        if(rentService.existsEmployee(currentEmployeeRun)){
             return new ResponseEntity<>("Empleado no encontrado en la base de datos", HttpStatus.NOT_FOUND);
         }
 
@@ -65,7 +67,7 @@ public class RentController {
         }
 
         try {
-            RentEntity newLoan = rentService.createRent(rent);  //, currentEmployeeRun)
+            RentEntity newLoan = rentService.createRent(rent, currentEmployeeRun);
             return new ResponseEntity<>(newLoan, HttpStatus.CREATED);
         } catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
@@ -73,12 +75,14 @@ public class RentController {
     }
 
     //Get rent
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<List<RentEntity>> getAllRents(){
         List<RentEntity> rents = rentService.getAllRents();
         return new ResponseEntity<>(rents, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{id}")
     public ResponseEntity<RentEntity> getRentById(@PathVariable Long id){
         return rentService.getRentById(id)
@@ -86,6 +90,7 @@ public class RentController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/client/{run}")
     public ResponseEntity<?> getActiveRentsByClient(@PathVariable String run){
         //It's verified that the client exist
@@ -97,23 +102,27 @@ public class RentController {
         return new ResponseEntity<>(rents, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/status/{status}")
     public ResponseEntity<List<RentEntity>> getRentByStatus(@PathVariable String status){
         List<RentEntity> rents = rentService.getRentByStatus(status);
         return new ResponseEntity<>(rents, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/validity/{validity}")
     public ResponseEntity<List<RentEntity>> getRentByValidity(@PathVariable String validity){
         List<RentEntity> rents = rentService.getRentByValidity(validity);
         return new ResponseEntity<>(rents, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/most-rented-tools")
     public ResponseEntity<List<Map<String, Object>>> getMostRentedTools(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start, @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end){
         return new ResponseEntity<>(rentService.getMostRentedTools(start, end), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/return/{id}")
     public ResponseEntity<?> returnRent(@PathVariable Long id, @RequestBody RentEntity rent){
         try {
@@ -144,6 +153,7 @@ public class RentController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/late-return-fee/{id}")
     public ResponseEntity<?> updateLateReturnFee(@PathVariable Long id, @RequestBody RentEntity rent){
         try {
@@ -164,6 +174,7 @@ public class RentController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/update-late-statuses")
     public ResponseEntity<Void> checkAndSetLateStatuses(){
         rentService.checkAndSetLateStatuses();

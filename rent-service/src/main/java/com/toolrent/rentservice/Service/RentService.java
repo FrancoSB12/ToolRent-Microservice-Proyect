@@ -115,9 +115,9 @@ public class RentService {
     }
 
     @Transactional
-    public RentEntity createRent(RentEntity rent) { //, String employeeRun)
+    public RentEntity createRent(RentEntity rent, String employeeRun) {
         //The employee is searched in the database
-        Employee employee = fetchEmployeeInDB(rent.getEmployeeRun());
+        Employee employee = fetchEmployeeInDB(employeeRun);
 
         //The client is searched in the database
         Client client = fetchClientInDB(rent.getClientRun());

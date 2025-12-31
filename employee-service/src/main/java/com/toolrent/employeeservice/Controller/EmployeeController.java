@@ -6,6 +6,7 @@ import com.toolrent.employeeservice.Service.EmployeeValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +24,9 @@ public class EmployeeController {
     }
 
     //Create employee
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping
-    public ResponseEntity<?> createEmployee(@RequestBody EmployeeEntity employee){ //, @RequestParam String password)
+    public ResponseEntity<?> createEmployee(@RequestBody EmployeeEntity employee, @RequestParam String password){
         //First, it's verified that the employee doesn't exist
         if(employeeService.exists(employee.getRun())){
             return new ResponseEntity<>("El empleado ya existe", HttpStatus.CONFLICT);
@@ -51,17 +53,19 @@ public class EmployeeController {
             return new ResponseEntity<>("Teléfono del empleado invalido", HttpStatus.BAD_REQUEST);
         }
 
-        EmployeeEntity newEmployee = employeeService.registerEmployee(employee);    //, password)
+        EmployeeEntity newEmployee = employeeService.registerEmployee(employee, password);
         return new ResponseEntity<>(newEmployee, HttpStatus.CREATED);
     }
 
     //Get employee
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<List<EmployeeEntity>> getAllEmployees(){
         List<EmployeeEntity> employees = employeeService.getAllEmployees();
         return new ResponseEntity<>(employees, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{employeeRun}")
     public ResponseEntity<EmployeeEntity> getEmployeeByRun(@PathVariable String employeeRun){
         return employeeService.getEmployeeByRun(employeeRun)
@@ -69,6 +73,7 @@ public class EmployeeController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/isAdmin")
     public ResponseEntity<List<EmployeeEntity>> getEmployeeByIsAdmin(){
         List<EmployeeEntity> employees = employeeService.getEmployeeIfItIsAdmin();
@@ -76,6 +81,7 @@ public class EmployeeController {
     }
 
     //Update employee
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{run}")
     public ResponseEntity<?> updateEmployee(@PathVariable String run, @RequestBody EmployeeEntity employee){
         try {
@@ -98,6 +104,7 @@ public class EmployeeController {
     }
 
     //Delete employee
+    @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/{employeeRun}")
     public ResponseEntity<String> deleteEmployeeByRun(@PathVariable("employeeRun") String run){
         boolean deletedEmployee = employeeService.deleteEmployeeByRun(run);

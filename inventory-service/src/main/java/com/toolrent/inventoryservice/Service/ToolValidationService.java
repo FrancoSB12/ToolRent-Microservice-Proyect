@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 public class ToolValidationService {
     //Regex precompiled for efficiency
     private static final String NAME_REGEX = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
-    private static final String TOOL_NAME_REGEX = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ \\d*/\"'.#, -]+$";
+    private static final String TOOL_NAME_REGEX = "^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ \\d*/\"'.#, -]+$";
     private static final String SERIAL_REGEX = "^[a-zA-Z0-9.-]{5,30}$";
 
     //Verify that the user input doesn't contain SQL injections

@@ -13,11 +13,13 @@ import java.util.Optional;
 public class EmployeeService {
     EmployeeValidationService employeeValidationService;
     EmployeeRepository employeeRepository;
+    KeycloakUserService keycloakUserService;
 
     @Autowired
-    public EmployeeService(EmployeeValidationService employeeValidationService, EmployeeRepository employeeRepository) {
+    public EmployeeService(EmployeeValidationService employeeValidationService, EmployeeRepository employeeRepository, KeycloakUserService keycloakUserService) {
         this.employeeValidationService = employeeValidationService;
         this.employeeRepository = employeeRepository;
+        this.keycloakUserService = keycloakUserService;
     }
 
     public List<EmployeeEntity> getAllEmployees(){
@@ -37,16 +39,16 @@ public class EmployeeService {
     }
 
     @Transactional
-    public EmployeeEntity registerEmployee(EmployeeEntity employee){ //, String password)
+    public EmployeeEntity registerEmployee(EmployeeEntity employee, String password){
         //Save in DB
         EmployeeEntity newEmployee = employeeRepository.save(employee);
 
         //Create Keycloak user
-        //String userId = keycloakUserService.createUser(employee.getRun(), employee.getEmail(), employee.getName(), employee.getSurname(), password);
+        String userId = keycloakUserService.createUser(employee.getRun(), employee.getEmail(), employee.getName(), employee.getSurname(), password);
 
         //Assign role
-        //String role = employee.isAdmin() ? "Admin" : "Employee";
-        //keycloakUserService.assignRole(userId, role);
+        String role = employee.isAdmin() ? "Admin" : "Employee";
+        keycloakUserService.assignRole(userId, role);
         return newEmployee;
     }
 

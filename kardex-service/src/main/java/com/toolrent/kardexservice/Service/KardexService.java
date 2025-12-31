@@ -2,7 +2,6 @@ package com.toolrent.kardexservice.Service;
 
 import com.toolrent.kardexservice.DTO.CreateKardexRequest;
 import com.toolrent.kardexservice.Entity.KardexEntity;
-import com.toolrent.kardexservice.Enum.KardexOperationType;
 import com.toolrent.kardexservice.Repository.KardexRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

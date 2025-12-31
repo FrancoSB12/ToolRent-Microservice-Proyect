@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ public class KardexController {
     }
 
     //Get Kardex
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<?> getAllKardex() {
         List<KardexEntity> kardexes = kardexService.getAllKardex();
@@ -31,6 +33,7 @@ public class KardexController {
 
     //Get by tool name
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/by-date")
     public ResponseEntity<?> getKardexByDateRange(@RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate, @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         if(startDate.isAfter(endDate)){
@@ -42,6 +45,7 @@ public class KardexController {
     }
 
     //Controllers that only communicates with other microservices
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PostMapping("/entry")
     public void createKardexEntry(@RequestBody CreateKardexRequest request) {
         kardexService.createKardexEntry(request);

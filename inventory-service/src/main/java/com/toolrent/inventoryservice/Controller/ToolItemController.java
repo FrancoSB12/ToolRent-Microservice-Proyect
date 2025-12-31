@@ -9,6 +9,7 @@ import com.toolrent.inventoryservice.Service.ToolValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public class ToolItemController {
     }
 
     //Create tool item
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping
     public ResponseEntity<?> createToolItem(@RequestBody ToolItemEntity toolItem) {
         //First, it's verified that the tool item doesn't exist
@@ -51,11 +53,11 @@ public class ToolItemController {
             return new ResponseEntity<>("Nivel de daño de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 
-        if(toolItem.getToolType() == null || toolItem.getToolType().getId() ==  null){
+        if (toolItem.getToolType() == null || toolItem.getToolType().getId() == null) {
             return new ResponseEntity<>("Cree o ingrese el tipo de herramienta antes de ingresar la herramienta", HttpStatus.BAD_REQUEST);
         }
 
-        if(!toolTypeService.exists(toolItem.getToolType().getId())){
+        if (!toolTypeService.exists(toolItem.getToolType().getId())) {
             return new ResponseEntity<>("El tipo de herramienta no se encontró en la base de datos", HttpStatus.NOT_FOUND);
         }
 
@@ -64,12 +66,14 @@ public class ToolItemController {
     }
 
     //Get tool item
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<List<ToolItemEntity>> getAllToolItems() {
         List<ToolItemEntity> toolItems = toolItemService.getAllToolItems();
         return new ResponseEntity<>(toolItems, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{id}")
     public ResponseEntity<ToolItemEntity> getToolItemById(@PathVariable Long id) {
         return toolItemService.getToolItemById(id)
@@ -77,13 +81,15 @@ public class ToolItemController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/serial-number/{serialNumber}")
-    public ResponseEntity<ToolItemEntity> getToolItemBySerialNumber(@PathVariable String serialNumber){
+    public ResponseEntity<ToolItemEntity> getToolItemBySerialNumber(@PathVariable String serialNumber) {
         return toolItemService.getToolItemBySerialNumber(serialNumber)
                 .map(toolItem -> new ResponseEntity<>(toolItem, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/type/{toolTypeId}")
     public ResponseEntity<?> getFirstAvailableToolItem(@PathVariable Long toolTypeId) {
         try {
@@ -94,6 +100,8 @@ public class ToolItemController {
         }
     }
 
+    //Update tool item
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateToolItem(@PathVariable Long id, @RequestBody ToolItemEntity toolItem){
         try {
@@ -115,7 +123,7 @@ public class ToolItemController {
         }
     }
 
-    //Update tool item
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/enable-tool-item/{serialNumber}")
     public ResponseEntity<?> enableToolItem(@PathVariable String serialNumber) {
         //Verify that the tool exist in the database
@@ -136,6 +144,7 @@ public class ToolItemController {
         return new ResponseEntity<>(enabledTool, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/disable-tool-item/{serialNumber}")
     public ResponseEntity<?> disableToolItem(@PathVariable String serialNumber, @RequestBody ToolItemEntity toolItem) {
         //Verify that the tool item exist in the database
@@ -156,6 +165,7 @@ public class ToolItemController {
         return new ResponseEntity<>(disabledTool, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/evaluate-damage/{toolId}")
     public ResponseEntity<?> evaluateDamage(@PathVariable Long toolId, @RequestBody ToolItemEntity toolItem) {
         //It's verified that the tool item exist in the database
@@ -177,6 +187,7 @@ public class ToolItemController {
     }
 
 
+    @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteToolItemById(@PathVariable Long id){
         boolean deletedToolItem = toolItemService.deleteToolItemById(id);

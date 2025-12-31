@@ -7,6 +7,7 @@ import com.toolrent.clientservice.Service.ClientValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public class ClientController {
     }
 
     //Create client
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping
     public ResponseEntity<?> createClient(@RequestBody ClientEntity client){
         //First, it's verified that the client doesn't exist
@@ -57,12 +59,14 @@ public class ClientController {
     }
 
     //Get client
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping
     public ResponseEntity<List<ClientEntity>> getAllClients(){
         List<ClientEntity> clients = clientService.getAllClients();
         return new ResponseEntity<>(clients, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{clientRun}")
     public ResponseEntity<ClientEntity> getClientByRun(@PathVariable("clientRun") String run){
         return clientService.getClientByRun(run)
@@ -70,6 +74,7 @@ public class ClientController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/status/{status}")
     public ResponseEntity<List<ClientEntity>> getClientsByStatus(@PathVariable String status){
         List<ClientEntity> clients = clientService.getClientsByStatus(status);
@@ -77,6 +82,7 @@ public class ClientController {
     }
 
     //Update client
+    @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{run}")
     public ResponseEntity<?> updateClient(@PathVariable String run, @RequestBody ClientEntity client){
         try {
@@ -97,6 +103,7 @@ public class ClientController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/charge")
     public ResponseEntity<String> chargeClient(@RequestBody ChargeClientFeeRequest request){
         if(request == null){
@@ -111,6 +118,7 @@ public class ClientController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/{run}")
     public ResponseEntity<String> deleteClient(@PathVariable String run){
         boolean deletedClient = clientService.deleteClientByRun(run);
