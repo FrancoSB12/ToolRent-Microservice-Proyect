@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
-    private RestTemplate restTemplate;
+    private final RestTemplate restTemplate;
 
     @Autowired
     public ReportService(RestTemplate restTemplate) {

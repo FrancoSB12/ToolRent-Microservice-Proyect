@@ -1,7 +1,6 @@
 package com.toolrent.inventoryservice.Controller;
 
 import com.toolrent.inventoryservice.DTO.ChangeStockRequest;
-import com.toolrent.inventoryservice.DTO.UpdateToolTypeRequest;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Service.ToolTypeService;
 import com.toolrent.inventoryservice.Service.ToolValidationService;
@@ -90,10 +89,10 @@ public class ToolTypeController {
     //Update tool
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateToolType(@PathVariable Long id, @RequestBody UpdateToolTypeRequest toolTypeRequest){
+    public ResponseEntity<?> updateToolType(@PathVariable Long id, @RequestBody ToolTypeEntity toolType){
         try {
             //Verify that the tool has an id and the id isn't null
-            if (toolTypeRequest.getId() == null) {
+            if (toolType.getId() == null) {
                 return new ResponseEntity<>("El id no puede estar vacío o ser nulo", HttpStatus.BAD_REQUEST);
             }
 
@@ -102,7 +101,7 @@ public class ToolTypeController {
                 return new ResponseEntity<>("El tipo de herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
             }
 
-            ToolTypeEntity updatedToolType = toolTypeService.updateToolType(id, toolTypeRequest);
+            ToolTypeEntity updatedToolType = toolTypeService.updateToolType(id, toolType);
             return new ResponseEntity<>(updatedToolType, HttpStatus.OK);
 
         } catch (Exception ex) {
