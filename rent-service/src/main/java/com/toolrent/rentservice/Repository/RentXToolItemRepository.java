@@ -21,7 +21,7 @@ public interface RentXToolItemRepository extends JpaRepository<RentXToolItemEnti
             "JOIN rxt.rent r " +
             "WHERE r.clientRun = :clientRun " +
             "AND r.status = 'Activo'")
-    Set<Long> findActiveLoansToolTypeIdsByClient(@Param("clientRun") String clientRun);
+    Set<Long> findActiveRentsToolTypeIdsByClient(@Param("clientRun") String clientRun);
 
     //Find the lastest rents for a specific tool, sort by descending loan ID or by date (the highest is the newest)
     @Query("SELECT rxt FROM RentXToolItemEntity rxt " +

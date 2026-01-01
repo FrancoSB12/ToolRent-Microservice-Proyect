@@ -28,7 +28,7 @@ public class RentXToolItemService {
     }
 
     public Set<Long> getActiveLoansToolTypeIdsByClient(String clientId){
-        return rentXToolItemRepository.findActiveLoansToolTypeIdsByClient(clientId);
+        return rentXToolItemRepository.findActiveRentsToolTypeIdsByClient(clientId);
     }
 
     public List<RentXToolItemEntity> getHistoryByToolId(Long toolId){

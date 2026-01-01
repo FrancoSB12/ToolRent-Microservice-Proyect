@@ -2,6 +2,7 @@ package com.toolrent.inventoryservice.Service;
 
 import com.toolrent.inventoryservice.DTO.ChargeClientFeeRequest;
 import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
+import com.toolrent.inventoryservice.DTO.ToolItemIdsRequest;
 import com.toolrent.inventoryservice.Entity.ToolItemEntity;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
@@ -78,6 +79,10 @@ public class ToolItemService {
                 ToolStatus.DISPONIBLE,
                 acceptableLevel
         ).orElseThrow(() -> new RuntimeException("No hay unidades disponibles de este tipo de herramienta."));
+    }
+
+    public List<ToolTypeEntity> getToolTypesByToolItemIds(List<Long> toolItemIds){
+        return toolItemRepository.findToolTypesByToolItemIds(toolItemIds);
     }
 
     public boolean exists(Long id){ return toolItemRepository.existsById(id); }

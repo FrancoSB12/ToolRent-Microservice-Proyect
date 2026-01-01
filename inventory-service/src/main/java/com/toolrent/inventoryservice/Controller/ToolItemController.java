@@ -1,6 +1,7 @@
 package com.toolrent.inventoryservice.Controller;
 
 import com.toolrent.inventoryservice.Entity.ToolItemEntity;
+import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
 import com.toolrent.inventoryservice.Enum.ToolStatus;
 import com.toolrent.inventoryservice.Service.ToolItemService;
@@ -98,6 +99,13 @@ public class ToolItemController {
         } catch (RuntimeException ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
         }
+    }
+
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @PostMapping("/get-tool-types")
+    public ResponseEntity<List<ToolTypeEntity>> getToolTypesByToolItemIds(@RequestBody List<Long> toolItemIds) {
+        List<ToolTypeEntity> toolTypes = toolItemService.getToolTypesByToolItemIds(toolItemIds);
+        return new ResponseEntity<>(toolTypes, HttpStatus.OK);
     }
 
     //Update tool item

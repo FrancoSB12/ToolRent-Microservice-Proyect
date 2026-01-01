@@ -21,20 +21,20 @@ public interface RentRepository extends JpaRepository<RentEntity, Long> {
             "LEFT JOIN FETCH r.rentTools " +
             "WHERE r.clientRun = :clientRun " +
             "AND r.status = 'Activo'")
-    List<RentEntity> findActiveLoansByClient(@Param("run") String clientRun);
+    List<RentEntity> findActiveRentsByClient(@Param("run") String clientRun);
 
     @Query("SELECT r FROM RentEntity r " +
             "WHERE r.clientRun = :clientRun " +
             "AND r.status = 'Activo' " +
             "AND r.returnDate < :today")
-    List<RentEntity> findOverdueLoans(@Param("clientRun") String clientRun, @Param("today") LocalDate today);
+    List<RentEntity> findClientOverdueRents(@Param("clientRun") String clientRun, @Param("today") LocalDate today);
 
     @Query("SELECT r FROM RentEntity r " +
             "LEFT JOIN FETCH r.rentTools rt")
     List<RentEntity> findAllWithDetails();
 
     @Query("SELECT r FROM RentEntity r " +
-            "LEFT JOIN FETCH r.rentTools lt " +
+            "LEFT JOIN FETCH r.rentTools rt " +
             "WHERE r.status = :status")
     List<RentEntity> findByStatusWithDetails(@Param("status") String status);
 

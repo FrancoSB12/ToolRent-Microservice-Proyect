@@ -44,7 +44,7 @@ public class RentService {
     }
 
     public List<RentEntity> getActiveRentsByClient(String clientRun){
-        return rentRepository.findActiveLoansByClient(clientRun);
+        return rentRepository.findActiveRentsByClient(clientRun);
     }
 
     public List<RentEntity> getRentByStatus(String status){
@@ -133,7 +133,7 @@ public class RentService {
         }
 
         //Check that the client doesn't have any overdue rents
-        List<RentEntity> overdueRents = rentRepository.findOverdueLoans(client.getRun(), LocalDate.now());
+        List<RentEntity> overdueRents = rentRepository.findClientOverdueRents(client.getRun(), LocalDate.now());
         if(!overdueRents.isEmpty()){
             throw new RuntimeException("El cliente tiene préstamos atrasados pendientes. No puede arrendar nuevo.");
         }
