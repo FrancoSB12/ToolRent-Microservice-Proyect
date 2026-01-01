@@ -37,6 +37,7 @@ public class KardexService {
         kardex.setDate(LocalDate.now());
         kardex.setStockInvolved(request.getStock());
         kardex.setToolTypeName(request.getToolTypeName());
+        kardex.setEmployeeRun(request.getEmployeeRun());
         kardexRepository.save(kardex);
     }
 }

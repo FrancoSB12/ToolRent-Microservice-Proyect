@@ -221,7 +221,7 @@ public class RentService {
 
             //Create associated kardex
             ToolType toolType = fetchToolTypeInDB(item.getToolTypeId());
-            createKardex(toolType.getName(), "PRESTAMO", -1);
+            createKardex(toolType.getName(), "PRESTAMO", -1, employeeRun);
         }
 
         //Update the client active rents
@@ -265,8 +265,8 @@ public class RentService {
                     throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
                 }
 
-                createKardex(toolType.getName(), "DEVOLUCION",1);
-                createKardex(toolType.getName(), "REPARACION", -1);
+                createKardex(toolType.getName(), "DEVOLUCION",1, dbRentEnt.getEmployeeRun());
+                createKardex(toolType.getName(), "REPARACION", -1, dbRentEnt.getEmployeeRun());
 
                 //Since the tool returned by the client is damaged, the client is prevented from requesting more tools until the damage level has been verified
                 //If the tools were indeed in good condition, they will be "Active" again
@@ -278,7 +278,7 @@ public class RentService {
                 updateStatus(itemMapInfo, "DISPONIBLE");
                 updateAvailableStock(dbToolItem.getToolTypeId(), 1);
 
-                createKardex(toolType.getName(), "DEVOLUCION", 1);
+                createKardex(toolType.getName(), "DEVOLUCION", 1, dbRentEnt.getEmployeeRun());
 
             } else{
                 throw new RuntimeException("La herramienta ya tiene un nivel de daño");
@@ -360,9 +360,9 @@ public class RentService {
         }
     }
 
-    private void createKardex(String toolTypeName, String operationType, Integer stock) {
+    private void createKardex(String toolTypeName, String operationType, Integer stock, String employeeRun) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employeeRun);
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

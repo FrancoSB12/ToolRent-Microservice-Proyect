@@ -2,7 +2,6 @@ package com.toolrent.inventoryservice.Service;
 
 import com.toolrent.inventoryservice.DTO.ChargeClientFeeRequest;
 import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
-import com.toolrent.inventoryservice.DTO.ToolItemIdsRequest;
 import com.toolrent.inventoryservice.Entity.ToolItemEntity;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
@@ -39,7 +38,7 @@ public class ToolItemService {
     }
 
     @Transactional
-    public ToolItemEntity createToolItem(ToolItemEntity newToolItem){
+    public ToolItemEntity createToolItem(ToolItemEntity newToolItem, String employeeRun){
         //The tool type is searched in the database and increase the available and total stock
         ToolTypeEntity managedToolType;
         if(newToolItem.getStatus() != ToolStatus.DISPONIBLE || newToolItem.getDamageLevel() != ToolDamageLevel.NO_DANADA){
@@ -55,7 +54,7 @@ public class ToolItemService {
         ToolItemEntity savedToolItem = toolItemRepository.save(newToolItem);
 
         //Create and save the associated kardex
-        createKardex(managedToolType.getName(), "REGISTRO", 1);
+        createKardex(managedToolType.getName(), "REGISTRO", 1, employeeRun);
 
         return savedToolItem;
     }
@@ -134,7 +133,7 @@ public class ToolItemService {
 
     //This method is used for internal maintenance
     @Transactional
-    public ToolItemEntity disableToolItem(Long id, ToolItemEntity toolItem){
+    public ToolItemEntity disableToolItem(Long id, ToolItemEntity toolItem, String employeeRun){
         //The tool item is searched in the database
         Optional<ToolItemEntity> dbToolItem = getToolItemById(id);
         ToolItemEntity dbToolItemEnt = dbToolItem.get();
@@ -152,7 +151,7 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Creates the associated kardex
-            createKardex(updatedToolType.getName(), "BAJA", -1);
+            createKardex(updatedToolType.getName(), "BAJA", -1, employeeRun);
 
         } else {
             //Any other type of damage sends the tool to "En reparación"
@@ -167,14 +166,14 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Create and save the associated kardex
-            createKardex(updatedToolType.getName(), "REPARACION", -1);
+            createKardex(updatedToolType.getName(), "REPARACION", -1, employeeRun);
         }
         return toolItemRepository.save(dbToolItemEnt);
     }
 
     //This method is used when a tool is returned damaged
     @Transactional
-    public ToolItemEntity evaluateDamage(Long toolId, ToolItemEntity toolItemFromFront){
+    public ToolItemEntity evaluateDamage(Long toolId, ToolItemEntity toolItemFromFront, String employeeRun){
         //The tool is searched in the database
         Optional<ToolItemEntity> dbToolItem = getToolItemById(toolId);
         ToolItemEntity dbToolItemEnt = dbToolItem.get();
@@ -219,7 +218,7 @@ public class ToolItemService {
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getReplacementValue());
             restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
-            createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1);
+            createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1, employeeRun);
 
         } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getDamageFee());
@@ -319,9 +318,9 @@ public class ToolItemService {
         return rent;
     }
 
-    private void createKardex(String toolTypeName, String operationType, Integer stock) {
+    private void createKardex(String toolTypeName, String operationType, Integer stock, String employeeRun) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employeeRun);
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

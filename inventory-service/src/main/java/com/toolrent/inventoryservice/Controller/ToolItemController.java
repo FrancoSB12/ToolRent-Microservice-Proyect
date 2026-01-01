@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,10 +35,19 @@ public class ToolItemController {
     //Create tool item
     @PreAuthorize("hasRole('Admin')")
     @PostMapping
-    public ResponseEntity<?> createToolItem(@RequestBody ToolItemEntity toolItem) {
+    public ResponseEntity<?> createToolItem(@RequestBody ToolItemEntity toolItem, Authentication authentication) {
         //First, it's verified that the tool item doesn't exist
         if ((toolItem.getId() != null && toolItemService.exists(toolItem.getId())) || toolItemService.existsBySerialNumber(toolItem.getSerialNumber())) {
             return new ResponseEntity<>("La unidad de herramienta ya existe en la base de datos", HttpStatus.CONFLICT);
+        }
+
+        String currentEmployeeRun;
+        //This is to get the employee run from the keycloak
+        if (authentication.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            currentEmployeeRun = jwt.getClaimAsString("preferred_username");
+        } else {
+            currentEmployeeRun = authentication.getName();
         }
 
         //Then, the data is validated for accuracy
@@ -62,7 +73,7 @@ public class ToolItemController {
             return new ResponseEntity<>("El tipo de herramienta no se encontró en la base de datos", HttpStatus.NOT_FOUND);
         }
 
-        ToolItemEntity newToolItem = toolItemService.createToolItem(toolItem);
+        ToolItemEntity newToolItem = toolItemService.createToolItem(toolItem, currentEmployeeRun);
         return new ResponseEntity<>(newToolItem, HttpStatus.CREATED);
     }
 
@@ -154,11 +165,20 @@ public class ToolItemController {
 
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/disable-tool-item/{serialNumber}")
-    public ResponseEntity<?> disableToolItem(@PathVariable String serialNumber, @RequestBody ToolItemEntity toolItem) {
+    public ResponseEntity<?> disableToolItem(@PathVariable String serialNumber, @RequestBody ToolItemEntity toolItem, Authentication authentication) {
         //Verify that the tool item exist in the database
         Optional<ToolItemEntity> dbToolItem = toolItemService.getToolItemBySerialNumber(serialNumber);
         if (dbToolItem.isEmpty()) {
             return new ResponseEntity<>("La herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        String currentEmployeeRun;
+        //This is to get the employee run from the keycloak
+        if (authentication.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            currentEmployeeRun = jwt.getClaimAsString("preferred_username");
+        } else {
+            currentEmployeeRun = authentication.getName();
         }
 
         if(toolItem.getDamageLevel() == ToolDamageLevel.NO_DANADA){
@@ -169,17 +189,26 @@ public class ToolItemController {
             return new ResponseEntity<>("La herramienta está en préstamo, no se puede deshabilitar", HttpStatus.BAD_REQUEST);
         }
 
-        ToolItemEntity disabledTool = toolItemService.disableToolItem(dbToolItem.get().getId(), toolItem);
+        ToolItemEntity disabledTool = toolItemService.disableToolItem(dbToolItem.get().getId(), toolItem, currentEmployeeRun);
         return new ResponseEntity<>(disabledTool, HttpStatus.OK);
     }
 
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/evaluate-damage/{toolId}")
-    public ResponseEntity<?> evaluateDamage(@PathVariable Long toolId, @RequestBody ToolItemEntity toolItem) {
+    public ResponseEntity<?> evaluateDamage(@PathVariable Long toolId, @RequestBody ToolItemEntity toolItem, Authentication authentication) {
         //It's verified that the tool item exist in the database
         Optional<ToolItemEntity> dbToolItem = toolItemService.getToolItemById(toolId);
         if (dbToolItem.isEmpty()) {
             return new ResponseEntity<>("La herramienta no existe en la base de datos", HttpStatus.NOT_FOUND);
+        }
+
+        String currentEmployeeRun;
+        //This is to get the employee run from the keycloak
+        if (authentication.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            currentEmployeeRun = jwt.getClaimAsString("preferred_username");
+        } else {
+            currentEmployeeRun = authentication.getName();
         }
 
         if(dbToolItem.get().getStatus() == ToolStatus.PRESTADA){
@@ -190,7 +219,7 @@ public class ToolItemController {
             return new ResponseEntity<>("Nivel de daño de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 
-        ToolItemEntity evaluatedTool = toolItemService.evaluateDamage(toolId, toolItem);
+        ToolItemEntity evaluatedTool = toolItemService.evaluateDamage(toolId, toolItem, currentEmployeeRun);
         return new ResponseEntity<>(evaluatedTool, HttpStatus.OK);
     }
 

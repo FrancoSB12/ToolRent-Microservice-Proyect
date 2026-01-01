@@ -32,4 +32,7 @@ public class KardexEntity {
 
     @Column(name = "tool_type_name", nullable = false)
     private String toolTypeName;
+
+    @Column(name = "employee_run", nullable = false)
+    private String employeeRun;
 }

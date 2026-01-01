@@ -8,4 +8,5 @@ public class CreateKardexRequest {
     private String toolTypeName;
     private KardexOperationType operationType;
     private Integer stock;
+    private String employeeRun;
 }

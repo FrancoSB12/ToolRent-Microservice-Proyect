@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,11 +29,21 @@ public class ToolTypeController {
     //Create tool type
     @PreAuthorize("hasRole('Admin')")
     @PostMapping
-    public ResponseEntity<?> createToolType(@RequestBody ToolTypeEntity toolType){
+    public ResponseEntity<?> createToolType(@RequestBody ToolTypeEntity toolType, Authentication authentication) {
         //First, it's verified that the tool type doesn't exist
         if (toolType.getId() != null && toolTypeService.exists(toolType.getId())) {
             return new ResponseEntity<>("El tipo de herramienta ya existe en la base de datos", HttpStatus.CONFLICT);
         }
+
+        String currentEmployeeRun;
+        //This is to get the employee run from the keycloak
+        if (authentication.getPrincipal() instanceof Jwt) {
+            Jwt jwt = (Jwt) authentication.getPrincipal();
+            currentEmployeeRun = jwt.getClaimAsString("preferred_username");
+        } else {
+            currentEmployeeRun = authentication.getName();
+        }
+
 
         //Then, the data is validated for accuracy
         if (toolValidationService.isInvalidName(toolType.getName())) {
@@ -58,7 +70,7 @@ public class ToolTypeController {
             return new ResponseEntity<>("Tarifa de daño de la herramienta inválida", HttpStatus.BAD_REQUEST);
         }
 
-        ToolTypeEntity newToolType = toolTypeService.createToolType(toolType);
+        ToolTypeEntity newToolType = toolTypeService.createToolType(toolType, currentEmployeeRun);
         return new ResponseEntity<>(newToolType, HttpStatus.CREATED);
     }
 

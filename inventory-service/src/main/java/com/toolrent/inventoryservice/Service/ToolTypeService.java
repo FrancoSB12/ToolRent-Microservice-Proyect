@@ -37,12 +37,12 @@ public class ToolTypeService {
     }
 
     @Transactional
-    public ToolTypeEntity createToolType(ToolTypeEntity newToolType){
+    public ToolTypeEntity createToolType(ToolTypeEntity newToolType, String employeeRun){
         //Save the toolType
         ToolTypeEntity savedToolType = toolTypeRepository.save(newToolType);
 
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0);
+        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun);
         String url = "http://kardex-service/kardex/entry";
         restTemplate.postForObject(url, createKardexRequest, Void.class);
 
