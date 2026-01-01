@@ -80,6 +80,13 @@ public class ClientController {
         return new ResponseEntity<>(clients, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @GetMapping("/search-by-runs")
+    public ResponseEntity<List<ClientEntity>> getClientsByRuns(@RequestBody List<String> runs){
+        List<ClientEntity> clients = clientService.getClientsByRunIn(runs);
+        return new ResponseEntity<>(clients, HttpStatus.OK);
+    }
+
     //Update client
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{run}")

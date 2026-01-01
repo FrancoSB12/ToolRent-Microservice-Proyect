@@ -6,7 +6,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class RentReportDTO {
+public class ActiveRentsReportDTO {
     private Long rentId;
     private LocalDate rentDate;
     private String validity;

@@ -3,6 +3,7 @@ package com.toolrent.rentservice.Service;
 import com.toolrent.rentservice.DTO.ApplyLateFeeRequest;
 import com.toolrent.rentservice.DTO.ChangeStockRequest;
 import com.toolrent.rentservice.DTO.CreateKardexRequest;
+import com.toolrent.rentservice.DTO.ToolRankingProjection;
 import com.toolrent.rentservice.Entity.RentEntity;
 import com.toolrent.rentservice.Entity.RentXToolItemEntity;
 import com.toolrent.rentservice.Model.Client;
@@ -51,8 +52,16 @@ public class RentService {
         return rentRepository.findByStatusWithDetails(status);
     }
 
+    public List<RentEntity> getRentByReturnDateBeforeAndValidity(){
+        return rentRepository.findByReturnDateBeforeAndValidity(LocalDate.now(), "Atrasado");
+    }
+
     public List<RentEntity> getRentByValidity(String validity){
         return rentRepository.findByValidity(validity);
+    }
+
+    public List<ToolRankingProjection> getToolRanking(LocalDate startDate, LocalDate endDate){
+        return rentRepository.findTopRentedTools(startDate, endDate);
     }
 
     public List<Map<String, Object>> getMostRentedTools(LocalDate startDate, LocalDate endDate){

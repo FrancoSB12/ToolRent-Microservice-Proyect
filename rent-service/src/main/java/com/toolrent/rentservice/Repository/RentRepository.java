@@ -1,5 +1,6 @@
 package com.toolrent.rentservice.Repository;
 
+import com.toolrent.rentservice.DTO.ToolRankingProjection;
 import com.toolrent.rentservice.Entity.RentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -38,5 +39,15 @@ public interface RentRepository extends JpaRepository<RentEntity, Long> {
             "WHERE r.status = :status")
     List<RentEntity> findByStatusWithDetails(@Param("status") String status);
 
+    List<RentEntity> findByReturnDateBeforeAndValidity(LocalDate date, String validity);
+
     List<RentEntity> findByValidity(String validity);
+
+    @Query("SELECT i.toolTypeId as toolTypeId, COUNT(i) as count " +
+            "FROM RentXToolItemEntity i " +
+            "JOIN i.rent r " +
+            "WHERE r.rentDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY i.toolTypeId " +
+            "ORDER BY count DESC")
+    List<ToolRankingProjection> findTopRentedTools(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 }

@@ -33,6 +33,11 @@ public class ClientService {
         return clients != null ? clients : Collections.emptyList();
     }
 
+    public List<ClientEntity> getClientsByRunIn(List<String> runs) {
+        List<ClientEntity> clients = clientRepository.findByRunIn(runs);
+        return clients != null ? clients : Collections.emptyList();
+    }
+
     public boolean exists(String run){
         return clientRepository.existsById(run);
     }

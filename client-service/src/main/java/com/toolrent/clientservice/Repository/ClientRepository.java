@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ClientRepository extends JpaRepository<ClientEntity, String>  {
     List<ClientEntity> findByStatus(String status);
+
+    List<ClientEntity> findByRunIn(List<String> runs);
 }

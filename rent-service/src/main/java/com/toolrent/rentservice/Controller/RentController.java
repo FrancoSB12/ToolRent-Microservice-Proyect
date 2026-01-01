@@ -1,5 +1,6 @@
 package com.toolrent.rentservice.Controller;
 
+import com.toolrent.rentservice.DTO.ToolRankingProjection;
 import com.toolrent.rentservice.Entity.RentEntity;
 import com.toolrent.rentservice.Service.RentService;
 import com.toolrent.rentservice.Service.RentValidationService;
@@ -110,10 +111,28 @@ public class RentController {
     }
 
     @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @GetMapping("/overdue")
+    public ResponseEntity<List<RentEntity>> getOverdueRents(){
+        List<RentEntity> overdue = rentService.getRentByReturnDateBeforeAndValidity();
+        return new ResponseEntity<>(overdue, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/validity/{validity}")
     public ResponseEntity<List<RentEntity>> getRentByValidity(@PathVariable String validity){
         List<RentEntity> rents = rentService.getRentByValidity(validity);
         return new ResponseEntity<>(rents, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @GetMapping("/stats/ranking")
+    public ResponseEntity<List<ToolRankingProjection>> getToolRanking(@RequestParam(required = false) LocalDate from, @RequestParam(required = false) LocalDate to){
+        //Default range (all history)
+        if (from == null) from = LocalDate.of(2000, 1, 1);
+        if (to == null) to = LocalDate.now();
+
+        List<ToolRankingProjection> ranking = rentService.getToolRanking(from, to);
+        return new ResponseEntity<>(ranking, HttpStatus.OK);
     }
 
     @PreAuthorize("hasAnyRole('Employee','Admin')")
