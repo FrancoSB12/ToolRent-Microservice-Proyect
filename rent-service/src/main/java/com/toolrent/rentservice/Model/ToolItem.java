@@ -12,5 +12,5 @@ public class ToolItem {
     private String serialNumber;
     private String status;
     private String damageLevel;
-    private Long toolTypeId;
+    private ToolType toolType;
 }

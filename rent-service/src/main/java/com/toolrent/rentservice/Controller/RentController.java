@@ -95,7 +95,7 @@ public class RentController {
     @GetMapping("/client/{run}")
     public ResponseEntity<?> getActiveRentsByClient(@PathVariable String run){
         //It's verified that the client exist
-        if(rentService.existsClient(run)){
+        if(!rentService.existsClient(run)){
             return new ResponseEntity<>("Cliente no encontrado en la base de datos", HttpStatus.NOT_FOUND);
         }
 
@@ -152,12 +152,12 @@ public class RentController {
             }
 
             //It's verified that the client exist
-            if(rentService.existsClient(rent.getClientRun())){
-                return new ResponseEntity<>("Cliente no encontrado en la base de datos", HttpStatus.NOT_FOUND);
+            if(!rentService.existsClient(rent.getClientRun())){
+                return new ResponseEntity<>("Cliente no encontrado!!!!!!!!!!!!!!! en la base de datos", HttpStatus.NOT_FOUND);
             }
 
             //It's verified that the employee exist
-            if(rentService.existsEmployee(rent.getEmployeeRun())){
+            if(!rentService.existsEmployee(rent.getEmployeeRun())){
                 return new ResponseEntity<>("Empleado no encontrado en la base de datos", HttpStatus.NOT_FOUND);
             }
 

@@ -58,7 +58,7 @@ public class ToolTypeService {
         ToolTypeEntity dbToolTypeEnt = dbToolType.get();
 
         if(toolType.getName() != null){
-            if(toolValidationService.isInvalidName(toolType.getName())){
+            if(toolValidationService.isInvalidToolName(toolType.getName())){
                 throw new IllegalArgumentException("Nombre de la herramienta inválido");
             }
             dbToolTypeEnt.setName(toolType.getName());

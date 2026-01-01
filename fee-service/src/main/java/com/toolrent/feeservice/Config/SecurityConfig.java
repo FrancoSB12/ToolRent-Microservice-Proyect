@@ -53,9 +53,5 @@ public class SecurityConfig {
         return converter;
     }
 
-    @Bean
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
-    }
 }
 

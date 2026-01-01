@@ -20,32 +20,33 @@ const getByStatus = status => {
   return httpClient.get(`/rent/status/${status}`);
 }
 
+const getOverdueRents = () => {
+  return httpClient.get('/rent/overdue');
+}
+
 const getByValidity = validity => {
   return httpClient.get(`/rent/validity/${validity}`);
 }
 
-const getMostLoanedTools = () => {
-  return httpClient.get('/rent/most-rented-tools');
+const getToolRanking = () => {
+  return httpClient.get(`/rent/stats/ranking`, {
+    params: {
+      from: FromDate,
+      to: toDate
+    }
+  });
 }
 
-const getCurrentLateFee = () => {
-  return httpClient.get('/rent/configuration/late-return-fee');
+const getMostRentedTools = () => {
+  return httpClient.get('/rent/most-rented-tools');
 }
 
 const returnLoan = (id, data) => {
   return httpClient.put(`/rent/return/${id}`, data);
 }
 
-const updateLateReturnFee = (id, data) => {
-  return httpClient.put(`/rent/late-return-fee/${id}`, data);
-}
-
-const updateGlobalLateReturnFee = (amount) => {
-  return httpClient.put(`/rent/configuration/late-fee?amount=${amount}`, {});
-}
-
 const updateLateStatuses = () => {
   return httpClient.put("/rent/update-late-statuses");
 }
 
-export default { create, getAll, getById, getActiveByClientRun, getByStatus, getByValidity, getMostLoanedTools, getCurrentLateFee, returnLoan, updateLateReturnFee, updateGlobalLateReturnFee, updateLateStatuses };
+export default { create, getAll, getById, getActiveByClientRun, getByStatus, getOverdueRents, getByValidity, getToolRanking, getMostRentedTools, returnLoan, updateLateStatuses };

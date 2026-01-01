@@ -96,7 +96,7 @@ const LoanReturn = () => {
                     <p><strong>Fecha Préstamo:</strong> {loan.loanDate}</p>
                     <p><strong>Fecha Límite:</strong> {loan.returnDate}</p>
                     {/* Calculate the number of tools if the list is populated */}
-                    <p><strong>Items:</strong> {loan.loanTools ? loan.loanTools.length : 'Cargando...'}</p>
+                    <p><strong>Items:</strong> {loan.rentTools ? loan.rentTools.length : 'Cargando...'}</p>
                                     
                     {/* Show tool names (Optional, if the Fetch worked) */}
                     {loan.loanTools && (

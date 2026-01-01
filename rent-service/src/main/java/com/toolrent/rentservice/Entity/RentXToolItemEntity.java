@@ -35,7 +35,4 @@ public class RentXToolItemEntity {
 
     @Column(name = "tool_name_snapshot")
     private String toolNameSnapshot;
-
-    @Column(name = "agreed_price")
-    private Integer agreedPrice;
 }

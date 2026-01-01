@@ -158,12 +158,8 @@ public class RentService {
         List<RentXToolItemEntity> toolItemsToSave = new ArrayList<>();
 
         for (RentXToolItemEntity toolItemRequest : toolItemsFromFront) {
-            Long toolItemId = toolItemRequest.getToolItemId();
-            ToolItem toolItem = fetchToolItemInDB(toolItemId);
-
-            //The tool type from the tool item is saved
-            Long toolTypeId = toolItemRequest.getToolTypeId();
-            ToolType toolType = fetchToolTypeInDB(toolTypeId);
+            ToolItem toolItem = fetchToolItemInDB(toolItemRequest.getToolItemId());
+            ToolType toolType = toolItem.getToolType();
 
             //The stock and status are validated
             if (!toolItem.getStatus().equals("DISPONIBLE") || toolType.getAvailableStock() < 1) {
@@ -171,19 +167,15 @@ public class RentService {
             }
 
             //it's verified that the client doesn't have a rented tool of this type
-            if (rentedToolsIds.contains(toolTypeId)) {
+            if (rentedToolsIds.contains(toolType.getId())) {
                 throw new RuntimeException("El cliente ya tiene arrendada una herramienta de tipo: " + toolType.getName());
             }
 
             //The relationship object is prepared for later storage
             toolItemRequest.setToolItemId(toolItem.getId());
-
-            // CREAR SNAPSHOT (Copia local)
-            RentXToolItemEntity newItem = new RentXToolItemEntity();
-            newItem.setToolItemId(toolItemId);
-            newItem.setToolNameSnapshot(toolType.getName());
-            newItem.setSerialNumberSnapshot(toolItem.getSerialNumber());
-            newItem.setAgreedPrice(toolType.getRentalFee());
+            toolItemRequest.setToolTypeId(toolType.getId());
+            toolItemRequest.setToolNameSnapshot(toolType.getName());
+            toolItemRequest.setSerialNumberSnapshot(toolItem.getSerialNumber());
 
             toolItemsToSave.add(toolItemRequest);
         }
@@ -198,7 +190,7 @@ public class RentService {
         rent.setClientNameSnapshot(client.getName() + " " + client.getSurname());
 
         rent.setEmployeeRun(employee.getRun());
-        rent.setEmployeeNameSnapshot(employee.getName());
+        rent.setEmployeeNameSnapshot(employee.getName()+ " " + employee.getSurname());
 
         //Set the late return fee
         Integer lateReturnFee = fetchLateReturnFeeInDB();
@@ -255,7 +247,7 @@ public class RentService {
         for(RentXToolItemEntity dbRentItem : dbRentItems) {
             ToolItem dbToolItem = fetchToolItemInDB(dbRentItem.getToolItemId());
             ToolItem itemMapInfo = toolItemMap.get(dbToolItem.getId());
-            ToolType toolType = fetchToolTypeInDB(dbToolItem.getId());
+            ToolType toolType = dbToolItem.getToolType();
 
             if (itemMapInfo.getDamageLevel().equals("EN_EVALUACION")) {
                 try {
@@ -276,7 +268,7 @@ public class RentService {
                 //"EN_EVALUACION" it's a placeholder until the tool damage is evaluated
                 //If it isn't in under review then it's "No dañada"
                 updateStatus(itemMapInfo, "DISPONIBLE");
-                updateAvailableStock(dbToolItem.getToolTypeId(), 1);
+                updateAvailableStock(dbToolItem.getToolType().getId(), 1);
 
                 createKardex(toolType.getName(), "DEVOLUCION", 1, dbRentEnt.getEmployeeRun());
 
@@ -460,7 +452,7 @@ public class RentService {
     private Integer fetchLateReturnFeeInDB() {
         Integer lateReturnFee;
         try {
-            lateReturnFee = restTemplate.getForObject("http://fee/current-late-return-fee", Integer.class);
+            lateReturnFee = restTemplate.getForObject("http://fee-service/fee/current-late-return-fee", Integer.class);
         } catch (HttpClientErrorException.NotFound e) {
             //The fee microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Multa por atraso no encontrada");

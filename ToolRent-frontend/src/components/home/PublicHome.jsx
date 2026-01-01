@@ -20,8 +20,8 @@ const PublicHome = () => {
       </header>
 
       <main className="public-main-content">
-        <h2>Gestión de Herramientas Simplificada</h2>
-        <p>Una descripción de tu increíble aplicación...</p>
+        <h2>Gestión de Herramientas Simplificada de ToolRent</h2>
+        <p>Aquí puedes gestionar todas las herramientas y arriendos de manera eficiente y sencilla.</p>
       </main>
 
     </div>

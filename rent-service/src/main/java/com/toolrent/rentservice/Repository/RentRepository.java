@@ -22,7 +22,7 @@ public interface RentRepository extends JpaRepository<RentEntity, Long> {
             "LEFT JOIN FETCH r.rentTools " +
             "WHERE r.clientRun = :clientRun " +
             "AND r.status = 'Activo'")
-    List<RentEntity> findActiveRentsByClient(@Param("run") String clientRun);
+    List<RentEntity> findActiveRentsByClient(@Param("clientRun") String clientRun);
 
     @Query("SELECT r FROM RentEntity r " +
             "WHERE r.clientRun = :clientRun " +

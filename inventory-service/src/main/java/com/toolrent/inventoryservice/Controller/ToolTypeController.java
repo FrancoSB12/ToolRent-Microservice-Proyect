@@ -46,7 +46,7 @@ public class ToolTypeController {
 
 
         //Then, the data is validated for accuracy
-        if (toolValidationService.isInvalidName(toolType.getName())) {
+        if (toolValidationService.isInvalidToolName(toolType.getName())) {
             return new ResponseEntity<>("Nombre de la herramienta inválido", HttpStatus.BAD_REQUEST);
         }
 

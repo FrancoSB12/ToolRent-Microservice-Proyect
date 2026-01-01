@@ -16,6 +16,10 @@ const getByStatus = status => {
   return httpClient.get(`/client/status/${status}`);
 }
 
+const getByRuns = (runList) => {
+  return httpClient.post('/client/search-by-runs', runList);
+}
+
 const update = (run, data) => {
   return httpClient.put(`/client/${run}`, data);
 }
@@ -24,4 +28,4 @@ const remove = run => {
   return httpClient.delete(`/client/${run}`);
 }
 
-export default { create, getAll, getByRun, getByStatus, update, remove };
+export default { create, getAll, getByRun, getByStatus, getByRuns, update, remove };

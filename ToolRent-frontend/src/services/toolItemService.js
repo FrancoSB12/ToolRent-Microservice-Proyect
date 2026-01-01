@@ -20,16 +20,20 @@ const getFirstAvailableByType = (toolTypeId) => {
   return httpClient.get(`/inventory/tool-item/type/${toolTypeId}`);
 }
 
+const getToolTypesByToolItemId = (toolItemIds) => {
+  return httpClient.post('/inventory/tool-item/get-tool-types', toolItemIds);
+}
+
 const updateItem = (id, data) => {
   return httpClient.put(`/inventory/tool-item/${id}`, data);
 }
 
-const disableItem = (serialNumber, data) => {
-  return httpClient.put(`/inventory/tool-item/disable-tool-item/${serialNumber}`, data);
+const enableItem = (serialNumber) => {
+  return httpClient.put(`/inventory/tool-item/enable-tool-item/${serialNumber}`);
 }
 
-const enableItem = (serialNumber, data) => {
-  return httpClient.put(`/inventory/tool-item/enable-tool-item/${serialNumber}`, data);
+const disableItem = (serialNumber, data) => {
+  return httpClient.put(`/inventory/tool-item/disable-tool-item/${serialNumber}`, data);
 }
 
 const evaluateItemDamage = (toolId, toolData) => {
@@ -40,4 +44,4 @@ const removeItem = id => {
   return httpClient.delete(`/inventory/tool-item/delete/${id}`);
 }
 
-export default { createItem, getAllItems, getItemById, getItemBySerialNumber, getFirstAvailableByType, updateItem, disableItem, enableItem, evaluateItemDamage, removeItem };
+export default { createItem, getAllItems, getItemById, getItemBySerialNumber, getFirstAvailableByType, getToolTypesByToolItemId, updateItem, disableItem, enableItem, evaluateItemDamage, removeItem };
