@@ -1,5 +1,6 @@
 package com.toolrent.rentservice.Controller;
 
+import com.toolrent.rentservice.DTO.RentReturnRequest;
 import com.toolrent.rentservice.DTO.ToolRankingProjection;
 import com.toolrent.rentservice.Entity.RentEntity;
 import com.toolrent.rentservice.Service.RentService;
@@ -143,7 +144,7 @@ public class RentController {
 
     @PreAuthorize("hasAnyRole('Employee','Admin')")
     @PutMapping("/return/{id}")
-    public ResponseEntity<?> returnRent(@PathVariable Long id, @RequestBody RentEntity rent){
+    public ResponseEntity<?> returnRent(@PathVariable Long id, @RequestBody RentReturnRequest rentReturnRequest){
         try {
             //It's verified that the rent exist
             Optional<RentEntity> existingRent = rentService.getRentById(id);
@@ -151,13 +152,8 @@ public class RentController {
                 return new ResponseEntity<>("El préstamo no existe en la base de datos", HttpStatus.NOT_FOUND);
             }
 
-            //It's verified that the client exist
-            if(!rentService.existsClient(rent.getClientRun())){
-                return new ResponseEntity<>("Cliente no encontrado!!!!!!!!!!!!!!! en la base de datos", HttpStatus.NOT_FOUND);
-            }
-
             //It's verified that the employee exist
-            if(!rentService.existsEmployee(rent.getEmployeeRun())){
+            if(!rentService.existsEmployee(rentReturnRequest.getEmployeeRun())){
                 return new ResponseEntity<>("Empleado no encontrado en la base de datos", HttpStatus.NOT_FOUND);
             }
 
@@ -165,7 +161,7 @@ public class RentController {
                 return new ResponseEntity<>("El préstamo ya está finalizado", HttpStatus.CONFLICT);
             }
 
-            RentEntity returnedLoan = rentService.returnRent(id, rent);
+            RentEntity returnedLoan = rentService.returnRent(id, rentReturnRequest);
             return new ResponseEntity<>(returnedLoan, HttpStatus.OK);
         } catch (Exception e){
             return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);

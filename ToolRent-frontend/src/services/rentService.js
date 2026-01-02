@@ -41,7 +41,7 @@ const getMostRentedTools = () => {
   return httpClient.get('/rent/most-rented-tools');
 }
 
-const returnLoan = (id, data) => {
+const returnRent = (id, data) => {
   return httpClient.put(`/rent/return/${id}`, data);
 }
 
@@ -49,4 +49,4 @@ const updateLateStatuses = () => {
   return httpClient.put("/rent/update-late-statuses");
 }
 
-export default { create, getAll, getById, getActiveByClientRun, getByStatus, getOverdueRents, getByValidity, getToolRanking, getMostRentedTools, returnLoan, updateLateStatuses };
+export default { create, getAll, getById, getActiveByClientRun, getByStatus, getOverdueRents, getByValidity, getToolRanking, getMostRentedTools, returnRent, updateLateStatuses };

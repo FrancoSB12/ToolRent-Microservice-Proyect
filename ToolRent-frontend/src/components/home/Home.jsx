@@ -14,21 +14,21 @@ const Home = () => {
       <div className="home-nav-buttons">
         <button 
           className="nav-button" 
-          onClick={() => navigate('/loan/register')}
+          onClick={() => navigate('/rent/register')}
         > 
           Realizar un Arriendo
         </button>
 
         <button 
           className="nav-button" 
-          onClick={() => navigate('/loan/return')}
+          onClick={() => navigate('/rent/return')}
         >
           Realizar una Devolución
         </button>
 
         <button 
           className="nav-button" 
-          onClick={() => navigate('/loans')}
+          onClick={() => navigate('/rents')}
         >
           Gestión de Préstamos
         </button>

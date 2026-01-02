@@ -1,9 +1,6 @@
 package com.toolrent.rentservice.Service;
 
-import com.toolrent.rentservice.DTO.ApplyLateFeeRequest;
-import com.toolrent.rentservice.DTO.ChangeStockRequest;
-import com.toolrent.rentservice.DTO.CreateKardexRequest;
-import com.toolrent.rentservice.DTO.ToolRankingProjection;
+import com.toolrent.rentservice.DTO.*;
 import com.toolrent.rentservice.Entity.RentEntity;
 import com.toolrent.rentservice.Entity.RentXToolItemEntity;
 import com.toolrent.rentservice.Model.Client;
@@ -223,7 +220,7 @@ public class RentService {
     }
 
     @Transactional
-    public RentEntity returnRent(Long id, RentEntity rent){
+    public RentEntity returnRent(Long id, RentReturnRequest returnRequest){
         //The rent is searched in the database
         Optional<RentEntity> dbLoan = getRentById(id);
         RentEntity dbRentEnt = dbLoan.get();
@@ -232,27 +229,37 @@ public class RentService {
         Client client = fetchClientInDB(dbRentEnt.getClientRun());
 
         //The list of tools from the frontend is converted into a map for quick searching
-        Map<Long, ToolItem> toolItemMap = new HashMap<>();
-        if(rent.getRentTools() != null){
-            for(RentXToolItemEntity rentItems : rent.getRentTools()){
-                ToolItem toolItem = fetchToolItemInDB(rentItems.getToolItemId());
-                toolItemMap.put(toolItem.getId(), toolItem);
+        Map<Long, String> toolDamageMap = new HashMap<>();
+        if(returnRequest.getReturnedTools() != null){
+            for (ToolReturnInfoDTO info : returnRequest.getReturnedTools()) {
+                toolDamageMap.put(info.getToolItemId(), info.getDamageLevel());
             }
         }
 
         //Update stock and validity of the tool
-        List<RentXToolItemEntity> dbRentItems = rentXToolItemService.getAllLoanToolItemsByLoan_Id(id);
+        List<RentXToolItemEntity> dbRentItems = rentXToolItemService.getAllRentToolItemsByRent_Id(id);
 
         //The database is browsed
         for(RentXToolItemEntity dbRentItem : dbRentItems) {
-            ToolItem dbToolItem = fetchToolItemInDB(dbRentItem.getToolItemId());
-            ToolItem itemMapInfo = toolItemMap.get(dbToolItem.getId());
-            ToolType toolType = dbToolItem.getToolType();
+            Long toolItemId = dbRentItem.getToolItemId();
 
-            if (itemMapInfo.getDamageLevel().equals("EN_EVALUACION")) {
+            //Verify that this tool came from the frontend
+            if (!toolDamageMap.containsKey(toolItemId)) {
+                throw new RuntimeException("Falta información de devolución para la herramienta ID: " + toolItemId);
+            }
+
+            String reportedDamageLevel = toolDamageMap.get(toolItemId);
+
+            //The tool info is obtained
+            ToolItem remoteToolItem = fetchToolItemInDB(toolItemId);
+            ToolType toolType = remoteToolItem.getToolType();
+
+            //The update logic is applied
+            if (reportedDamageLevel.equals("EN_EVALUACION")) {
                 try {
-                    itemMapInfo.setStatus("EN_REPARACION");
-                    restTemplate.put("http://inventory-service/inventory/tool-item/" + dbToolItem.getId(), itemMapInfo, ToolItem.class);
+                    remoteToolItem.setStatus("EN_REPARACION");
+                    remoteToolItem.setDamageLevel(reportedDamageLevel);
+                    restTemplate.put("http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(), remoteToolItem, ToolItem.class);
                 } catch (RestClientException e) {
                     throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
                 }
@@ -264,11 +271,14 @@ public class RentService {
                 //If the tools were indeed in good condition, they will be "Active" again
                 client.setStatus("Restringido");
 
-            } else if(itemMapInfo.getDamageLevel().equals("NO_DANADA")){
+            } else if(reportedDamageLevel.equals("NO_DANADA")){
                 //"EN_EVALUACION" it's a placeholder until the tool damage is evaluated
                 //If it isn't in under review then it's "No dañada"
-                updateStatus(itemMapInfo, "DISPONIBLE");
-                updateAvailableStock(dbToolItem.getToolType().getId(), 1);
+                remoteToolItem.setStatus("DISPONIBLE");
+                remoteToolItem.setDamageLevel("NO_DANADA");
+                restTemplate.put("http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(), remoteToolItem, ToolItem.class);
+
+                updateAvailableStock(toolType.getId(), 1);
 
                 createKardex(toolType.getName(), "DEVOLUCION", 1, dbRentEnt.getEmployeeRun());
 
@@ -291,6 +301,7 @@ public class RentService {
             dbRentEnt.setValidity("Puntual");
         }
 
+        //Finish rent
         dbRentEnt.setReturnTime(LocalTime.now());
         dbRentEnt.setStatus("Finalizado");
         return rentRepository.save(dbRentEnt);

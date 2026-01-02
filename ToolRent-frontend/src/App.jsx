@@ -237,7 +237,7 @@ function App() {
 
 
         <Route 
-          path="/loans" 
+          path="/rents" 
           element={
             <PrivateRoute 
               element={<RentHome />} 
@@ -247,7 +247,7 @@ function App() {
         />
 
         <Route 
-          path="/loan/register" 
+          path="/rent/register" 
           element={
             <PrivateRoute 
               element={<RentRegister />} 
@@ -257,7 +257,7 @@ function App() {
         />
 
         <Route 
-          path="/loan/return" 
+          path="/rent/return" 
           element={
             <PrivateRoute 
               element={<RentReturn />} 
@@ -267,7 +267,7 @@ function App() {
         />
 
         <Route 
-          path="/loan/return/:id" 
+          path="/rent/return/:id" 
           element={
             <PrivateRoute 
               element={<RentReturnProccess />} 
@@ -277,7 +277,7 @@ function App() {
         />
 
         <Route 
-          path="/loan/configuration" 
+          path="/rent/configuration" 
           element={
             <PrivateRoute 
               element={<RentLateFeeConfig />} 
@@ -286,7 +286,7 @@ function App() {
           } 
         />
         <Route 
-          path="/loans/active" 
+          path="/rents/active" 
           element={
             <PrivateRoute 
               element={<RentActiveView />} 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import rentService from '../../services/rentService';
+import feeService from '../../services/feeService';
 import '../../styles/Register.css';
 
 const LateFeeConfiguration = () => {
@@ -13,10 +13,9 @@ const LateFeeConfiguration = () => {
 
     //Load current late fee on component mount
     useEffect(() => {
-        rentService.getCurrentLateFee()
+        feeService.getCurrentLateReturnFee()
             .then(res => {
                 setCurrentFee(res.data);
-                setNewFeeAmount(res.data);
                 setLoading(false);
             })
             .catch(err => {
@@ -42,10 +41,15 @@ const LateFeeConfiguration = () => {
             return;
         }
 
-        rentService.updateGlobalLateReturnFee(amount)
+        feeService.updateGlobalLateReturnFee(amount)
             .then(() => {
                 toast.success(`¡Multa por atraso actualizada a $${amount}!`);
                 setCurrentFee(amount);
+                setNewFeeAmount('');
+
+                setTimeout(() => {
+                    navigate('/rents');
+                }, 1000);
             })
             .catch(err => {
                 const msg = err.response?.data || "Error al actualizar la multa.";
@@ -85,7 +89,10 @@ const LateFeeConfiguration = () => {
                 </p>
 
                 <div className="form-actions" style={{ marginTop: '1rem' }}>
-                    <button type="submit" className="register-submit-btn" style={{ width: '100%' }}>
+                    <button 
+                        type="submit" 
+                        className="register-submit-btn" 
+                        style={{ width: '100%' }}>
                         Guardar Configuración
                     </button>
                 </div>

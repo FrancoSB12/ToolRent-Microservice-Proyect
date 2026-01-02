@@ -13,7 +13,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
 
 @Service
 public class FeeService {
@@ -67,5 +66,4 @@ public class FeeService {
 
         restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
     }
-
 }

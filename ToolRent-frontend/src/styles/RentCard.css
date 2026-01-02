@@ -1,4 +1,4 @@
-.loan-card {
+.rent-card {
     background-color: #ffffff;
     border: 1px solid #e0e0e0;
     border-radius: 12px;
@@ -10,15 +10,12 @@
     min-width: 280px;
 }
 
-.loan-card:hover {
+.rent-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
 }
 
-/* ====================================
-   Header: Info del Cliente
-   ==================================== */
-.loan-card-header {
+.rent-card-header {
     display: flex;
     align-items: center;
     padding: 15px;
@@ -26,11 +23,11 @@
     border-bottom: 1px solid #eee;
 }
 
-.loan-avatar {
+.rent-avatar {
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    background-color: #007bff; /* Azul primario para avatares de préstamos */
+    background-color: #007bff;
     color: white;
     display: flex;
     justify-content: center;
@@ -41,26 +38,42 @@
     flex-shrink: 0;
 }
 
-.loan-info h3 {
+.rent-info h3 {
     margin: 0;
     font-size: 1rem;
     color: #333;
     line-height: 1.2;
 }
 
-.loan-info .loan-rut {
+.rent-info .rent-rut {
     font-size: 0.75rem;
     color: #666;
     margin-top: 2px;
     display: block;
 }
 
-.loan-card-body {
+.rent-badges {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.rent-status-badge,
+.rent-validity-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.rent-card-body {
     padding: 15px;
     flex-grow: 1;
 }
 
-.loan-card-body .detail-row {
+.rent-card-body .detail-row {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
@@ -68,23 +81,27 @@
     border-bottom: 1px dotted #e0e0e0;
 }
 
-.loan-card-body .detail-row:last-child {
+.rent-card-body .detail-row:last-child {
     border-bottom: none;
 }
 
-.loan-card-body .detail-row strong {
+.rent-card-body .detail-row strong {
     color: #555;
     font-weight: 600;
 }
 
-.loan-card-footer {
+.rent-card-footer {
     padding: 10px 15px;
     text-align: right;
     border-top: 1px solid #f0f0f0;
     background-color: #fafafa;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 5px;
 }
 
-.loan-status-badge {
+.rent-validity-badge {
     padding: 4px 8px;
     border-radius: 5px;
     font-size: 0.75rem;
@@ -94,14 +111,40 @@
     display: inline-block;
 }
 
-.loan-status-active {
-    background-color: #28a745; /* Verde */
+.validity-ontime {
+  background-color: #83f3b9;
+  color: #00a854;
 }
 
-.loan-status-restricted {
-    background-color: #dc3545; /* Rojo */
+.validity-overdue {
+  background-color: #f18c8c;
+  color: #d32f2f;
 }
 
-.loan-status-default {
-    background-color: #6c757d; /* Gris */
+.validity-default {
+    background-color: #6c757d;
+}
+
+.rent-status-badge {
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+    display: inline-block;
+}
+
+.status-active {
+  background-color: #83f3b9;
+  color: #00a854;
+}
+
+.status-finished {
+  background-color: #eaddfa;
+  color: #6941c6;
+}
+
+.status-default {
+    background-color: #6c757d;
 }

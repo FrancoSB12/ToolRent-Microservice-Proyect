@@ -4,47 +4,47 @@ import { toast } from 'react-toastify';
 import { useKeycloak } from '@react-keycloak/web';
 import rentService from '../../services/rentService';
 import '../../styles/Register.css';
-import '../../styles/LoanReturn.css';
+import '../../styles/RentReturn.css';
 
-//Damage options
 const DAMAGE_OPTIONS = [
     { value: 'NO_DANADA', label: 'En Buen Estado' },
-    { value: 'EN_EVALUACION', label: 'Dañada (La herramienta irá a evaluación de daños)' }
+    { value: 'EN_EVALUACION', label: 'Dañada (La herramienta irá a evaluación)' }
 ];
 
-const LoanReturnProcess = () => {
+const RentReturnProcess = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { keycloak } = useKeycloak();
 
-    const [loan, setLoan] = useState(null);
+    const [rent, setRent] = useState(null);
     const [toolConditions, setToolConditions] = useState({});
     const [loading, setLoading] = useState(true);
 
-    //Load the Loan on startup
+    //Load the Rent when starting
     useEffect(() => {
         rentService.getById(id)
             .then(response => {
                 const data = response.data;
-                setLoan(data);
+                setRent(data);
                 
+                // Initialize default conditions
                 const initialConditions = {};
-                if (data.loanTools) {
-                    data.loanTools.forEach(lt => {
-                        initialConditions[lt.toolItem.id] = 'NO_DANADA';
+                if (data.rentTools) {
+                    data.rentTools.forEach(rt => {
+                        initialConditions[rt.toolItemId] = 'NO_DANADA';
                     });
                 }
                 setToolConditions(initialConditions);
                 setLoading(false);
             })
             .catch(err => {
-                console.error("Error cargando préstamo:", err);
-                toast.error("No se pudo cargar la información del préstamo.");
-                navigate('/loan/return');
+                console.error("Error cargando arriendo:", err);
+                toast.error("No se pudo cargar la información del arriendo.");
+                navigate('/rent/return');
             });
     }, [id, navigate]);
 
-    //Handle condition change in selectors
+    //Handle change in selectors
     const handleConditionChange = (toolItemId, newCondition) => {
         setToolConditions(prev => ({
             ...prev,
@@ -52,10 +52,9 @@ const LoanReturnProcess = () => {
         }));
     };
 
-    //Submit the Return
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!loan) return;
+        if (!rent) return;
 
         const employeeRun = keycloak.tokenParsed?.preferred_username;
 
@@ -64,115 +63,98 @@ const LoanReturnProcess = () => {
             return;
         }
 
-        const loanToReturn = {
-            id: loan.id,
-            loanDate: loan.loanDate,
-            loanTime: loan.loanTime,
-            returnDate: loan.returnDate,
-            returnTime: new Date().toTimeString().split(' ')[0],
-            lateReturnFee: loan.lateReturnFee,
-            status: loan.status,
-            validity: loan.validity,
-            client: { run: loan.client.run },
-            employee: { run: employeeRun },
-            
-            loanTools: loan.loanTools.map(lt => ({
-                id: lt.id,
-                toolItem: {
-                    id: lt.toolItem.id,
-                    damageLevel: toolConditions[lt.toolItem.id] 
-                }
+        //Construct the DTO 'RentReturnRequest'
+        const returnRequestPayload = {
+            employeeRun: employeeRun,
+            returnedTools: rent.rentTools.map(rt => ({
+                toolItemId: rt.toolItemId,
+                damageLevel: toolConditions[rt.toolItemId]
             }))
         };
 
-        rentService.returnLoan(loan.id, loanToReturn)
+        // Send the lightweight payload to the backend
+        rentService.returnRent(rent.id, returnRequestPayload)
             .then(() => {
-                toast.success(`Devolución del préstamo #${loan.id} registrada con éxito.`);
-                navigate('/loan/return');
+                toast.success(`Devolución del arriendo #${rent.id} registrada con éxito.`);
+                navigate('/rent/return');
             })
             .catch(err => {
                 console.error(err);
-                const msg = err.response?.data || "Error al procesar la devolución.";
-                toast.error(typeof msg === 'string' ? msg : "Error interno del servidor.");
+                const msg = err.response?.data?.message || err.response?.data || "Error al procesar la devolución.";
+                const displayMsg = typeof msg === 'string' ? msg : "Error interno del servidor.";
+                toast.error(displayMsg);
             });
     };
 
-    if (loading) return <div className="full-page-content"><p>Cargando detalles del préstamo...</p></div>;
+    if (loading) return <div className="full-page-content"><p>Cargando detalles del arriendo...</p></div>;
 
     return (
         <main className="full-page-content">
-            <h2 className="form-title">Procesar Devolución #{loan.id}</h2>
+            <h2 className="form-title">Procesar Devolución #{rent.id}</h2>
 
-            {/* Loan information */}
+            {/* Rent Information */}
             <div style={{ textAlign: 'center', marginBottom: '2rem', padding: '1rem', background: '#fff', borderRadius: '8px', border: '1px solid #eee' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                     <div>
                         <strong>Cliente:</strong><br/>
-                        {loan.client?.name} {loan.client?.surname}
+                        {rent.clientNameSnapshot}
                     </div>
                     <div>
                         <strong>RUT:</strong><br/>
-                        {loan.client?.run}
+                        {rent.clientRun}
                     </div>
                     <div>
                         <strong>Fecha Préstamo:</strong><br/>
-                        {loan.loanDate}
+                        {rent.rentDate}
                     </div>
                 </div>
             </div>
 
-            <form className="register-form" onSubmit={handleSubmit} style={{ maxWidth: '800px' }}>
+            <form 
+                className="register-form" 
+                onSubmit={handleSubmit} 
+                style={{ 
+                    maxWidth: '900px', 
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '1.5rem'
+                }}>
+
                 <h3 style={{ fontSize: '1.1rem', color: '#333', marginBottom: '1rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
                     Evaluar Estado de las Herramientas
                 </h3>
 
-                {/* Tool list to evaluate */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {loan.loanTools?.map(lt => (
-                        <div key={lt.toolItem.id} style={{ 
-                            padding: '1rem', 
-                            border: '1px solid #ccc', 
-                            borderRadius: '8px', 
-                            background: '#fff', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'space-between', 
-                            flexWrap: 'wrap', 
-                            gap: '1rem'
-                        }}>
+                {/* Tool List for Evaluation */}
+                <div className="tool-evaluation-list">
+                    {rent.rentTools?.map(rt => (
+                        <div key={rt.toolItemId} className="tool-evaluation-item">
                             
-                            {/* Tool information */}
-                            <div style={{ flex: 1, minWidth: '200px' }}>
-                                <strong style={{ fontSize: '1.1rem', display: 'block' }}>
-                                    {lt.toolItem.toolType?.name || "Herramienta"}
-                                </strong>
-                                <span style={{ color: '#666', fontSize: '0.9rem' }}>
-                                    Serie: {lt.toolItem.serialNumber}
-                                </span>
-                                <br/>
-                                <span style={{ fontSize: '0.8rem', color: '#888' }}>
-                                    Modelo: {lt.toolItem.toolType?.model}
+                            {/* Left block: Information */}
+                            <div className="tool-info-block">
+                                <h4>
+                                    {rt.toolNameSnapshot || "Herramienta Desconocida"}
+                                </h4>
+                                <span className="serial-number">
+                                    Serie: {rt.serialNumberSnapshot || "N/A"}
                                 </span>
                             </div>
 
-                            {/* Status Selector */}
-                            <div style={{ flex: 1, minWidth: '250px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px', display: 'block' }}>
+                            {/* Status selector */}
+                            <div className="tool-selector-block">
+                                <label htmlFor={`condition-${rt.toolItemId}`}>
                                     Condición de recepción:
                                 </label>
                                 <select 
-                                    value={toolConditions[lt.toolItem.id]} 
-                                    onChange={(e) => handleConditionChange(lt.toolItem.id, e.target.value)}
+                                    id={`condition-${rt.toolItemId}`}
+                                    value={toolConditions[rt.toolItemId]} 
+                                    onChange={(e) => handleConditionChange(rt.toolItemId, e.target.value)}
+                                    /* Mantenemos los estilos dinámicos en línea porque dependen del estado */
+                                    className="damage-select-base"
                                     style={{ 
-                                        width: '100%', 
-                                        padding: '0.8rem', 
-                                        borderRadius: '4px', 
-                                        border: '1px solid #999',
-                                        backgroundColor: '#f9f9f9',
-                                        // Resaltar en rojo si se selecciona un daño
-                                        color: toolConditions[lt.toolItem.id] !== 'NO_DANADA' ? '#d9534f' : '#333',
-                                        fontWeight: toolConditions[lt.toolItem.id] !== 'NO_DANADA' ? 'bold' : 'normal',
-                                        borderColor: toolConditions[lt.toolItem.id] !== 'NO_DANADA' ? '#d9534f' : '#ccc'
+                                        color: toolConditions[rt.toolItemId] !== 'NO_DANADA' ? '#d9534f' : '#333',
+                                        fontWeight: toolConditions[rt.toolItemId] !== 'NO_DANADA' ? '600' : 'normal',
+                                        borderColor: toolConditions[rt.toolItemId] !== 'NO_DANADA' ? '#d9534f' : '#ccc',
+                                        backgroundColor: toolConditions[rt.toolItemId] !== 'NO_DANADA' ? '#fff5f5' : '#f9f9f9'
                                     }}
                                 >
                                     {DAMAGE_OPTIONS.map(opt => (
@@ -189,10 +171,11 @@ const LoanReturnProcess = () => {
                     
                     <button 
                         type="button" 
-                        onClick={() => navigate('/loan/return')}
+                        onClick={() => navigate('/rent/return')}
                         style={{ 
-                            background: 'none', 
-                            border: '1px solid #ccc', 
+                            background: 'var(--primary-color)',
+                            color: '#fff', 
+                            border: 'none',
                             padding: '0.8rem 2rem', 
                             borderRadius: '5px', 
                             cursor: 'pointer', 
@@ -216,4 +199,4 @@ const LoanReturnProcess = () => {
     );
 };
 
-export default LoanReturnProcess;
+export default RentReturnProcess;

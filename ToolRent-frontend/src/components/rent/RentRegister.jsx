@@ -28,7 +28,7 @@ const formatRun = (run) => {
     return `${formattedBody}-${dv}`;
 }
 
-const LoanRegister = () => {
+const RentRegister = () => {
     const navigate = useNavigate();
     const { keycloak } = useKeycloak();
 
@@ -117,8 +117,8 @@ const LoanRegister = () => {
 
         rentService.create(rentEntity)
             .then(() => {
-                toast.success('¡Préstamo registrado!');
-                navigate('/loan/register');
+                toast.success('¡Arriendo registrado!');
+                navigate('/rents');
             })
             .catch(err => {
                 const msg = err.response?.data || "Error al registrar.";
@@ -244,4 +244,4 @@ const LoanRegister = () => {
     );
 };
 
-export default LoanRegister;
+export default RentRegister;

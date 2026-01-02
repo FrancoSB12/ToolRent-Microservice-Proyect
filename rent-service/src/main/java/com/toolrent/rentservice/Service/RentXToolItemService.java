@@ -19,8 +19,8 @@ public class RentXToolItemService {
     }
 
     //List all loan tools
-    public List<RentXToolItemEntity> getAllLoanToolItemsByLoan_Id(Long loanId){
-        return rentXToolItemRepository.findByRent_Id(loanId);
+    public List<RentXToolItemEntity> getAllRentToolItemsByRent_Id(Long rentId){
+        return rentXToolItemRepository.findByRent_Id(rentId);
     }
 
     public boolean existsByLoanId(Long loanId){

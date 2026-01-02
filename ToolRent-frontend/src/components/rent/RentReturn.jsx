@@ -1,10 +1,9 @@
-// En: src/components/loans/LoanReturn.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import rentService from '../../services/rentService';
 import '../../styles/Register.css'; 
-import '../../styles/LoanReturn.css';
+import '../../styles/RentReturn.css';
 
 const formatRut = (value) => {
   const cleaned = value.replace(/[^0-9kK]/g, '');
@@ -14,11 +13,11 @@ const formatRut = (value) => {
   return `${body.replace(/\B(?=(\d{3})+(?!\d))/g, ".")}-${dv}`;
 };
 
-const LoanReturn = () => {
+const RentReturn = () => {
   const navigate = useNavigate();
   
   const [clientRun, setClientRun] = useState('');
-  const [loans, setLoans] = useState([]);
+  const [rents, setRents] = useState([]);
   const [searched, setSearched] = useState(false);
 
   const handleSearch = (e) => {
@@ -30,17 +29,17 @@ const LoanReturn = () => {
 
     rentService.getActiveByClientRun(clientRun)
       .then(response => {
-        const foundLoans = response.data || [];
-        setLoans(foundLoans);
+        const foundRents = response.data || [];
+        setRents(foundRents);
         setSearched(true);
         
-        if (foundLoans.length === 0) {
-          toast.info("El cliente no tiene préstamos activos pendientes.");
+        if (foundRents.length === 0) {
+          toast.info("El cliente no tiene arriendos activos pendientes.");
         }
       })
       .catch(err => {
         console.error(err);
-        setLoans([]);
+        setRents([]);
         setSearched(true);
 
         if (err.response && err.response.status === 404) {
@@ -53,8 +52,8 @@ const LoanReturn = () => {
       });
   };
 
-  const handleProcessReturn = (loanId) => {
-    navigate(`/loan/return/${loanId}`);
+  const handleProcessReturn = (rentId) => {
+    navigate(`/rent/return/${rentId}`);
   };
 
   return (
@@ -80,35 +79,37 @@ const LoanReturn = () => {
         </form>
       </div>
 
-      {/* --- Results --- */}
+      {/* --- Results in grid --- */}
       {searched && (
-        <div className="loans-grid-container">
-          {loans.length > 0 ? (
-            <div className="loans-grid">
-              {loans.map(loan => (
-                <div key={loan.id} className="loan-card loan-active">
-                  <div className="loan-header">
-                    <span className="loan-id">Préstamo #{loan.id}</span>
-                    <span className="loan-status status-activo">ACTIVO</span>
+        <>
+          {rents.length > 0 ? (
+            <div className="rents-grid">
+              {rents.map(rent => (
+                <div key={rent.id} className="rent-card rent-active">
+                  
+                  {/* Header: Title on the left, Validity on the right */}
+                  <div className="rent-header">
+                    <span className="rent-id">Arriendo #{rent.id}</span>
+                    <span className={`rent-validity ${rent.validity === 'Puntual' ? 'validity-ontime' : 'validity-overdue'}`}> {rent.validity}</span>
                   </div>
                                 
-                  <div className="loan-body">
-                    <p><strong>Fecha Préstamo:</strong> {loan.loanDate}</p>
-                    <p><strong>Fecha Límite:</strong> {loan.returnDate}</p>
-                    {/* Calculate the number of tools if the list is populated */}
-                    <p><strong>Items:</strong> {loan.rentTools ? loan.rentTools.length : 'Cargando...'}</p>
+                  {/* Body: Details aligned to the left */}
+                  <div className="rent-body">
+                    <p><strong>Fecha Arriendo:</strong> {rent.rentDate}</p>
+                    <p><strong>Fecha Límite:</strong> {rent.returnDate}</p>
+                    <p><strong>Herramientas:</strong> {rent.rentTools ? rent.rentTools.length : 0}</p>
                                     
-                    {/* Show tool names (Optional, if the Fetch worked) */}
-                    {loan.loanTools && (
-                      <div style={{fontSize: '0.85rem', color: '#666', marginTop: '0.5rem'}}>
-                        {loan.loanTools.map(lt => lt.toolItem?.toolType?.name).join(', ')}
+                    {/* Small list of tools */}
+                    {rent.rentTools && (
+                      <div style={{fontSize: '0.85rem', color: '#666', marginTop: '0.5rem', fontStyle: 'italic'}}>
+                        {rent.rentTools.map(rt => rt.toolNameSnapshot || 'Herramienta desconocida').join(', ')}
                       </div>
                     )}
                   </div>
 
                   <button 
                     className="return-action-btn"
-                    onClick={() => handleProcessReturn(loan.id)}
+                    onClick={() => handleProcessReturn(rent.id)}
                   >
                     Iniciar Devolución
                   </button>
@@ -116,14 +117,14 @@ const LoanReturn = () => {
               ))}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', marginTop: '2rem', color: '#666' }}>
-              <p>No se encontraron préstamos activos para el RUT: <strong>{clientRun}</strong></p>
+            <div style={{ textAlign: 'center', marginTop: '2rem', color: '#fff', fontSize: '1.2rem' }}>
+              <p>No se encontraron arriendos activos para el RUT: <strong>{clientRun}</strong></p>
             </div>
           )}
-        </div>
+        </>
       )}
     </main>
   );
 };
 
-export default LoanReturn;
+export default RentReturn;
