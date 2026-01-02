@@ -98,6 +98,16 @@ const ToolTypeReplacementValueConfig = () => {
                             setSelectedToolType(newValue);
                         }}
                         value={selectedToolType}
+                        sx={{
+                            backgroundColor: '#ffffff',
+                            borderRadius: '4px',
+                            '& .MuiOutlinedInput-root': {
+                                padding: '1px!important',
+                            },
+                            '& .MuiInputLabel-root': {
+                                fontSize: '1rem',
+                            }
+                        }}
                         renderInput={(params) => <TextField {...params} label="Buscar Herramienta" />}
                     />
                 </div>

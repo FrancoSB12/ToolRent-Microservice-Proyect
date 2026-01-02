@@ -1,4 +1,5 @@
 .tool-card {
+  position: relative;
   background-color: var(--background-color, #ffffff);
   border-radius: 12px; 
   border: 1px solid #e0e0e0;
@@ -13,9 +14,14 @@
   overflow: hidden;
 }
 
-.tool-card:hover {
+.tool-card.admin-mode {
+  cursor: pointer;
+}
+
+.tool-card.admin-mode:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  border-color: var(--accent-color, #FFC107);
 }
 
 .tool-card-header {
@@ -31,12 +37,11 @@
   font-weight: 700;
   min-height: 3.2rem; 
   display: -webkit-box;
-  -webkit-line-clamp: 2;  /* Limit to 2 lines **/
+  -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-
 
 .tool-card-header div {
   display: flex;
@@ -105,7 +110,6 @@
   color: #fff;
 }
 
-/* Badges colors */
 .status-disponible { background-color: var(--success-color, green); }
 .status-prestada { background-color: var(--warning-color, yellow); color: #333; }
 .status-en-reparacion { background-color: var(--in-maintenance-color); }
@@ -120,3 +124,106 @@
 .damage-desuso { background-color: #7a7a7a; }
 .damage-en-evaluacion { background-color: #007bff; }
 .damage-default { background-color: #ccc; }
+
+.card-edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: var(--background-color, #ffffff);
+  z-index: 10;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+  box-sizing: border-box;
+  animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-edit-overlay h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-color, #212529);
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 2px solid var(--accent-color, #FFC107);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.edit-group {
+  width: 100%;
+}
+
+.edit-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.card-edit-overlay input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  background-color: #f9f9f9;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.card-edit-overlay input:focus {
+  border-color: var(--accent-color, #FFC107);
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+  background-color: #fff;
+}
+
+/* Botones de acción */
+.edit-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  gap: 1rem;
+}
+
+.btn-mini-cancel, .btn-mini-save {
+  flex: 1;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.btn-mini-cancel {
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.btn-mini-cancel:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-mini-save {
+  background-color: var(--accent-color, #FFC107);
+  color: #212529;
+}
+
+.btn-mini-save:hover {
+  filter: brightness(0.95);
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}

@@ -5,7 +5,9 @@ const getAll = () => {
 }
 
 const getKardexByToolName = (toolName) => {
-    return httpClient.get(`/kardex/tool/${toolName}`);
+    return httpClient.get('/kardex/tool', { 
+        params: { name: toolName } 
+    });
 }
 
 const getKardexByDateRange = (startDate, endDate) => {

@@ -345,7 +345,7 @@ public class ToolItemService {
 
     private void createKardex(String toolTypeName, String operationType, Integer stock, Employee employee) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + employee.getSurname());
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + " " + employee.getSurname());
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

@@ -1,6 +1,7 @@
 package com.toolrent.kardexservice.Controller;
 
 import com.toolrent.kardexservice.DTO.CreateKardexRequest;
+import com.toolrent.kardexservice.DTO.UpdateToolNameRequest;
 import com.toolrent.kardexservice.Entity.KardexEntity;
 import com.toolrent.kardexservice.Service.KardexService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +34,8 @@ public class KardexController {
 
     //Get by tool name
     @PreAuthorize("hasAnyRole('Employee','Admin')")
-    @GetMapping("/tool/{toolName}")
-    public ResponseEntity<?> getKardexByToolName(@PathVariable String toolName) {
+    @GetMapping("/tool")
+    public ResponseEntity<?> getKardexByToolName(@RequestParam("name") String toolName) {
         return kardexService.getKardexByToolTypeName(toolName)
                 .map(kardexes -> new ResponseEntity<>(kardexes, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
@@ -56,5 +57,12 @@ public class KardexController {
     @PostMapping("/entry")
     public void createKardexEntry(@RequestBody CreateKardexRequest request) {
         kardexService.createKardexEntry(request);
+    }
+
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @PutMapping("/sync-tool-name")
+    public ResponseEntity<Void> updateToolName(@RequestBody UpdateToolNameRequest request) {
+        kardexService.updateToolTypeName(request.getName(), request.getNewName());
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

@@ -5,14 +5,22 @@ import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Model.Employee;
 import com.toolrent.inventoryservice.Repository.ToolTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -70,7 +78,7 @@ public class ToolTypeService {
         }
 
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun, employee.getName() + employee.getSurname());
+        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun, employee.getName() + " " + employee.getSurname());
         String url = "http://kardex-service/kardex/entry";
         restTemplate.postForObject(url, createKardexRequest, Void.class);
 
@@ -88,6 +96,29 @@ public class ToolTypeService {
         if(toolType.getName() != null){
             if(toolValidationService.isInvalidToolName(toolType.getName())){
                 throw new IllegalArgumentException("Nombre de la herramienta inválido");
+            }
+            String oldName = dbToolTypeEnt.getName();
+            if(!oldName.equals(toolType.getName())){
+                try {
+                    String url = "http://kardex-service/kardex/sync-tool-name";
+                    Map<String, String> body = new HashMap<>();
+                    body.put("name", oldName);
+                    body.put("newName", toolType.getName());
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_JSON);
+
+                    HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(body, headers);
+
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.PUT,
+                            requestEntity,
+                            Void.class
+                    );
+                } catch (Exception e) {
+                    System.err.println("Error sincronizando nombre con Kardex: " + e.getMessage());
+                }
             }
             dbToolTypeEnt.setName(toolType.getName());
         }

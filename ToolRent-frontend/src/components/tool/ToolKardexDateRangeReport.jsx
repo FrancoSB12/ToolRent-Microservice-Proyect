@@ -47,26 +47,28 @@ const KardexDateRangeReport = () => {
         <main className="full-page-content">
             <h2 className="form-title">Reporte de Kardex por Rango de Fechas</h2>
             
-            <form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto 2rem', padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: 'white' }}>
-                
-                <div style={{ flex: 1 }}>
+            <form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto 2rem', padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'flex-end', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: 'white' }}>
+
+                <div className="form-group">
                     <label htmlFor="startDate">Fecha Inicio:</label>
                     <input 
                         type="date" 
                         id="startDate"
                         value={startDate} 
-                        onChange={(e) => setStartDate(e.target.value)} 
-                        required 
+                        onChange={(e) => setStartDate(e.target.value)}
+                        style={{ height: '50px' }}
+                        required
                     />
                 </div>
-                
-                <div style={{ flex: 1 }}>
+
+                <div className="form-group">
                     <label htmlFor="endDate">Fecha Fin:</label>
                     <input 
                         type="date" 
                         id="endDate"
                         value={endDate} 
-                        onChange={(e) => setEndDate(e.target.value)} 
+                        onChange={(e) => setEndDate(e.target.value)}
+                        style={{ height: '50px' }}
                         required 
                     />
                 </div>
@@ -74,10 +76,10 @@ const KardexDateRangeReport = () => {
                 <button 
                     type="submit" 
                     className="action-btn"
-                    style={{ height: '40px', marginTop: '15px' }}
+                    style={{ height: '50px' }}
                     disabled={loading}
                 >
-                    {loading ? 'Buscando...' : 'Generar Reporte'}
+                    {loading ? 'Buscando...' : 'Buscar'}
                 </button>
             </form>
 

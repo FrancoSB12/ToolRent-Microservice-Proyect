@@ -41,5 +41,9 @@ public class KardexService {
         kardex.setEmployeeNameSnapshot(request.getEmployeeName());
         kardexRepository.save(kardex);
     }
+
+    public void updateToolTypeName(String name, String newName){
+        kardexRepository.updateToolTypeName(name, newName);
+    }
 }
 

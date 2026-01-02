@@ -257,7 +257,6 @@ function App() {
           } 
         />
 
-
         <Route 
           path="/rents" 
           element={
