@@ -13,7 +13,7 @@ const Sidebar = ({ isOpen }) => {
                 <ul className="sidebar-links">
                     <li>
                         <NavLink to="/rent/register">
-                        Realizar un Prestamo
+                        Realizar un Arriendo
                         </NavLink>
                     </li>
                     <li>

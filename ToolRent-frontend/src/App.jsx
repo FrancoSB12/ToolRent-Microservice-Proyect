@@ -10,6 +10,7 @@ import MinimalLayout from './components/common/MinimalLayout';
 import ToolHome from './components/tool/ToolHome';
 import ToolKardexView from './components/tool/ToolKardexView.jsx';
 import ToolKardexDateRangeReport from './components/tool/ToolKardexDateRangeReport.jsx';
+import ToolMostRented from './components/tool/ToolMostRented.jsx';
 import ToolItemHome from './components/tool/ToolItemHome.jsx';
 import ToolTypeRegister from './components/tool/ToolTypeRegister';
 import ToolTypeRentalFeeConfig from './components/tool/ToolTypeRentalFeeConfig.jsx';
@@ -20,6 +21,7 @@ import ToolItemDisable from './components/tool/ToolItemDisable.jsx';
 import ToolItemEvaluateDamage from './components/tool/ToolItemEvaluateDamage.jsx';
 import ClientHome from './components/client/ClientHome.jsx';
 import ClientRegister from './components/client/ClientRegister.jsx';
+import ClientOverdue from './components/client/ClientOverdueRent.jsx';
 import EmployeeHome from './components/employee/EmployeeHome.jsx';
 import EmployeeRegister from './components/employee/EmployeeRegister.jsx';
 import RentHome from './components/rent/RentHome.jsx';
@@ -121,6 +123,16 @@ function App() {
             <PrivateRoute 
               element={<ClientRegister />} 
               rolesAllowed={['Admin']} 
+            />
+          } 
+        />
+
+        <Route 
+          path="/clients/overdue" 
+          element={
+            <PrivateRoute 
+              element={<ClientOverdue />} 
+              rolesAllowed={['Admin', 'Employee']} 
             />
           } 
         />
@@ -230,6 +242,16 @@ function App() {
           element={
             <PrivateRoute 
               element={<ToolKardexDateRangeReport />} 
+              rolesAllowed={['Admin', 'Employee']}
+            />
+          } 
+        />
+
+        <Route 
+          path="/tools/most-rented-ranking" 
+          element={
+            <PrivateRoute 
+              element={<ToolMostRented />} 
               rolesAllowed={['Admin', 'Employee']}
             />
           } 

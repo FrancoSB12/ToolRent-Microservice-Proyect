@@ -2,10 +2,14 @@ package com.toolrent.inventoryservice.Service;
 
 import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
+import com.toolrent.inventoryservice.Model.Employee;
 import com.toolrent.inventoryservice.Repository.ToolTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -36,13 +40,37 @@ public class ToolTypeService {
         return toolTypeRepository.findByName(name);
     }
 
+    public List<ToolTypeEntity> getToolTypesByToolItemIds(List<Long> toolItemIds){
+        return toolTypeRepository.findToolTypesByIds(toolItemIds);
+    }
+
     @Transactional
     public ToolTypeEntity createToolType(ToolTypeEntity newToolType, String employeeRun){
         //Save the toolType
         ToolTypeEntity savedToolType = toolTypeRepository.save(newToolType);
 
+        Employee employee;
+        try {
+            employee = restTemplate.getForObject("http://employee-service/employee/" + employeeRun, Employee.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The employee microservice responded, but said that the employee doesn't exist
+            throw new RuntimeException("Empleado no encontrado con RUN: " + employeeRun);
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The employee microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de empleados: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The employee microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de empleados está caído o no responde.");
+        }
+
+        if(employee == null){
+            throw new RuntimeException("Empleado no encontrado con RUN: " + employeeRun);
+        }
+
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun);
+        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun, employee.getName() + employee.getSurname());
         String url = "http://kardex-service/kardex/entry";
         restTemplate.postForObject(url, createKardexRequest, Void.class);
 

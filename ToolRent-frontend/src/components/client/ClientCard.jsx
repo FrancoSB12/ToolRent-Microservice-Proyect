@@ -23,7 +23,7 @@ const ClientCard = ({ client }) => {
             <div className="client-info">
             <h3>{client.name}</h3>
             <h3>{client.surname}</h3>
-            <span className="client-rut">{client.rut}</span>
+            <span className="client-run">{client.run}</span>
             </div>
         </div>
 
@@ -42,8 +42,8 @@ const ClientCard = ({ client }) => {
                 <span>{client.debt || 'Sin deuda'}</span>
             </div>
             <div className="detail-row">
-                <strong>Herramientas en posesion:</strong>
-                <span>{client.borrowedTools || 'Sin herramientas en posesión'}</span>
+                <strong>Arriendos activos:</strong>
+                <span>{client.activeRents || 'Sin arriendos activos'}</span>
             </div>
         </div>
 

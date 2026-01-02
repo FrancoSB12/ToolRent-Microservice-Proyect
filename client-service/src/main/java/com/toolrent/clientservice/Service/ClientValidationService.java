@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ClientValidationService {
-    private static final String NAME_REGEX = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
+    private static final String NAME_REGEX = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s]+$";
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     private static final String CLEAN_PHONE_REGEX = "[\\s\\-()]";
     private static final String CELLPHONE_REGEX = "\\+569\\d{8}";

@@ -1,5 +1,6 @@
 package com.toolrent.rentservice.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,6 +33,9 @@ public class RentEntity {
     @Column(name = "return_time")
     private LocalTime returnTime;
 
+    @Column(name = "real_return_date")
+    private LocalDate realReturnDate;
+
     @Column(name = "late_return_fee", nullable = false)
     private Integer lateReturnFee;
 
@@ -46,18 +50,25 @@ public class RentEntity {
     @Column(name = "client_run", nullable = false)
     private String clientRun;
 
-    @Column(name = "employee_run", nullable = false)
-    private String employeeRun;
+    @Column(name = "rent_employee_run", nullable = false)
+    private String rentEmployeeRun;
+
+    @Column(name = "return_employee_run")
+    private String returnEmployeeRun;
 
     @OneToMany(mappedBy = "rent")
+    @JsonIgnoreProperties("rent")
     private List<RentXToolItemEntity> rentTools;
 
     //A "photo" of the important details is saved so as not to constantly call other microservices
     @Column(name = "client_name_snapshot")
     private String clientNameSnapshot;
 
-    @Column(name = "employee_name_snapshot")
-    private String employeeNameSnapshot;
+    @Column(name = "rent_employee_name_snapshot")
+    private String rentEmployeeNameSnapshot;
+
+    @Column(name = "return_employee_name_snapshot")
+    private String returnEmployeeNameSnapshot;
 
     public String getValidity() {
         if ("Finalizado".equalsIgnoreCase(this.status)) {

@@ -38,6 +38,7 @@ public class KardexService {
         kardex.setStockInvolved(request.getStock());
         kardex.setToolTypeName(request.getToolTypeName());
         kardex.setEmployeeRun(request.getEmployeeRun());
+        kardex.setEmployeeNameSnapshot(request.getEmployeeName());
         kardexRepository.save(kardex);
     }
 }

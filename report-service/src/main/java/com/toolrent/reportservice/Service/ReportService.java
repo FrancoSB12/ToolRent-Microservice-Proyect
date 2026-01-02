@@ -157,7 +157,7 @@ public class ReportService {
                 .collect(Collectors.toList());
 
         //Get the names from inventory-service
-        ToolType[] typesArray = restTemplate.postForObject("http://inventory-service/inventory/tool-item/get-tool-types", typeIds, ToolType[].class);
+        ToolType[] typesArray = restTemplate.postForObject("http://inventory-service/inventory/tool-type/get-tool-types", typeIds, ToolType[].class);
 
         if (typesArray == null || typesArray.length == 0) {
             return Collections.emptyList();
@@ -171,7 +171,7 @@ public class ReportService {
         List<RankingReportDTO> report = new ArrayList<>();
 
         for (ToolRankingStat stat : stats) {
-            String name = namesMap.getOrDefault(stat.getToolTypeId(), "Herramienta Desconocida");
+            String name = namesMap.getOrDefault(stat.getToolTypeId(), "Desconocido (ID: " + stat.getToolTypeId() + ")");
 
             report.add(new RankingReportDTO(name, stat.getToolTypeId(), stat.getCount()));
         }

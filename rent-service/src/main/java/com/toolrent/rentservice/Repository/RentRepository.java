@@ -39,7 +39,7 @@ public interface RentRepository extends JpaRepository<RentEntity, Long> {
             "WHERE r.status = :status")
     List<RentEntity> findByStatusWithDetails(@Param("status") String status);
 
-    List<RentEntity> findByReturnDateBeforeAndValidity(LocalDate date, String validity);
+    List<RentEntity> findByReturnDateBeforeAndValidityAndStatus(LocalDate date, String validity, String status);
 
     List<RentEntity> findByValidity(String validity);
 

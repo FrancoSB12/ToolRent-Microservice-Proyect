@@ -116,7 +116,6 @@ const RentHome = () => {
       <div className="card-grid">
         {rents.length > 0 ? (
           rents.map(rent => (
-            console.log(rent),
             <RentCard key={rent.id} rent={rent} /> 
           ))
         ) : (

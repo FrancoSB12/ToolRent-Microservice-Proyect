@@ -29,10 +29,9 @@ const ToolTypeReplacementValueConfig = () => {
         fetchToolTypes();
     }, []);
     
-    //Sincronize the text field with the current value when selecting a tool
     useEffect(() => {
         if (selectedToolType) {
-            setNewValueAmount(selectedToolType.replacementValue?.toString() || ''); 
+            setNewValueAmount(''); 
         }
     }, [selectedToolType]);
 
@@ -57,15 +56,21 @@ const ToolTypeReplacementValueConfig = () => {
             return;
         }
 
-        toolTypeService.updateReplacementValue(selectedToolType.id, amount) 
+        const partialUpdate = {
+            id: selectedToolType.id,
+            replacementValue: amount
+        };
+
+        toolTypeService.updateType(selectedToolType.id, partialUpdate) 
             .then(() => {
                 toast.success(`¡Valor de reposición para ${selectedToolType.name} actualizado a $${amount}!`);
                 
-                //Update local state
+                // Actualizar estado local
                 setToolTypes(prevTypes => 
                     prevTypes.map(t => t.id === selectedToolType.id ? { ...t, replacementValue: amount } : t)
                 );
                 setSelectedToolType(prev => ({ ...prev, replacementValue: amount }));
+                setNewValueAmount('');
             })
             .catch(err => {
                 const msg = err.response?.data || "Error al actualizar el valor.";
@@ -88,7 +93,7 @@ const ToolTypeReplacementValueConfig = () => {
                     <Autocomplete
                         id="toolTypeSelect"
                         options={toolTypes}
-                        getOptionLabel={(option) => `${option.name} (${option.model}) - Valor Actual: $${option.replacementValue || 'N/A'}`}
+                        getOptionLabel={(option) => `${option.name} (${option.model})`}
                         onChange={(event, newValue) => {
                             setSelectedToolType(newValue);
                         }}
@@ -100,7 +105,7 @@ const ToolTypeReplacementValueConfig = () => {
                 {selectedToolType && (
                     <>
                         <p style={{textAlign: 'center', fontWeight: 'bold'}}>
-                            Valor de reposición actual para {selectedToolType.name}: **${selectedToolType.replacementValue}**
+                            Valor de reposición actual para {selectedToolType.name}: ${selectedToolType.replacementValue}
                         </p>
                         <div className="form-group">
                             <label htmlFor="newValue">Nuevo Valor de Reposición ($):</label>

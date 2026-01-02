@@ -11,10 +11,9 @@ const ToolTypeRentalFeeConfig = () => {
     const [newFeeAmount, setNewFeeAmount] = useState('');
     const [loading, setLoading] = useState(true);
 
-    //Refresh function to reload the list
     const fetchToolTypes = () => {
         setLoading(true);
-        toolTypeService.getAllTypes()
+        toolTypeService.getAllTypes() 
             .then(res => {
                 setToolTypes(res.data);
                 setLoading(false);
@@ -26,21 +25,18 @@ const ToolTypeRentalFeeConfig = () => {
             });
     };
 
-    // Load all tool types on component mount
     useEffect(() => {
         fetchToolTypes();
     }, []);
     
-    //Synchronize the text field with the current fee when a tool type is selected
     useEffect(() => {
         if (selectedToolType) {
-            setNewFeeAmount(selectedToolType.rentalFee?.toString() || ''); 
+            setNewFeeAmount(''); 
         }
     }, [selectedToolType]);
 
 
     const handleFeeChange = (e) => {
-        //Ensure only positive numbers
         const value = e.target.value.replace(/[^0-9]/g, '');
         setNewFeeAmount(value);
     };
@@ -59,21 +55,27 @@ const ToolTypeRentalFeeConfig = () => {
             toast.error("Por favor, ingresa un monto válido y positivo.");
             return;
         }
+        const partialUpdate = {
+            id: selectedToolType.id,
+            rentalFee: amount
+        };
 
-
-        toolTypeService.updateRentalFee(selectedToolType.id, amount) 
+        toolTypeService.updateType(selectedToolType.id, partialUpdate) 
             .then(() => {
                 toast.success(`¡Tarifa de arriendo para ${selectedToolType.name} actualizada a $${amount}!`);
-                
-                //Update local list and selected state
+
+                //Update local state
                 setToolTypes(prevTypes => 
                     prevTypes.map(t => t.id === selectedToolType.id ? { ...t, rentalFee: amount } : t)
                 );
                 setSelectedToolType(prev => ({ ...prev, rentalFee: amount }));
+                
+                setNewFeeAmount('');
             })
             .catch(err => {
                 const msg = err.response?.data || "Error al actualizar la tarifa.";
-                toast.error(typeof msg === 'string' ? msg : 'Error interno.');
+                //If the backend returns an error message (e.g., "Invalid fee"), we show it
+                toast.error(typeof msg === 'string' ? msg : 'Error interno al actualizar.');
             });
     };
 
@@ -92,7 +94,7 @@ const ToolTypeRentalFeeConfig = () => {
                     <Autocomplete
                         id="toolTypeSelect"
                         options={toolTypes}
-                        getOptionLabel={(option) => `${option.name} (${option.model}) - Tarifa Actual: $${option.rentalFee || 'N/A'}`}
+                        getOptionLabel={(option) => `${option.name} (${option.model})`}
                         onChange={(event, newValue) => {
                             setSelectedToolType(newValue);
                         }}
@@ -104,7 +106,7 @@ const ToolTypeRentalFeeConfig = () => {
                 {selectedToolType && (
                     <>
                         <p style={{textAlign: 'center', fontWeight: 'bold'}}>
-                            Tarifa actual para {selectedToolType.name}: **${selectedToolType.rentalFee}**
+                            Tarifa actual para {selectedToolType.name}: ${selectedToolType.rentalFee}
                         </p>
                         <div className="form-group">
                             <label htmlFor="newFee">Nuevo Monto de Tarifa Diaria ($):</label>

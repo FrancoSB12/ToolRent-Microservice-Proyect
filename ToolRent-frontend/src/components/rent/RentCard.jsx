@@ -23,7 +23,15 @@ const getRentStatusClass = (status) => {
   return 'status-default';
 };
 
+const formatTime = (time) => {
+  if (!time) return '--:--';
+  return time.toString().split('.')[0];
+};
+
 const RentCard = ({ rent }) => {
+  // Verificamos si ya hay una fecha real de devolución para mostrar la sección extra
+  const isReturned = !!rent.realReturnDate;
+
   return (
     <div className="rent-card">
 
@@ -57,32 +65,66 @@ const RentCard = ({ rent }) => {
                 <span>{rent.rentDate} ({rent.rentTime})</span>
             </div>
             <div className="detail-row">
-                <strong>Fecha de Devolución Estimada:</strong>
+                <strong>Atendido por:</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <span>{rent.rentEmployeeNameSnapshot || 'Desconocido'}</span>
+                    <span style={{ fontSize: '0.8rem', color: '#888' }}>{rent.rentEmployeeRun}</span>
+                </div>
+            </div>
+            <div className="detail-row">
+                <strong>Fecha Est. Devolución:</strong>
                 <span>{rent.returnDate}</span>
             </div>
             <div className="detail-row">
                 <strong>Multa por día atrasado:</strong>
                 <span>${rent.lateReturnFee || 0}</span>
             </div>
-            <div className="detail-row">
-                <strong>Atendido por:</strong>
-                <span>{rent.employeeNameSnapshot || 'Desconocido'}</span>
-            </div>
+
+            {/* Return section (Only visible if already returned) */}
+            {isReturned && (
+                <div className="return-section" style={{ borderTop: '1px dashed #ccc', marginTop: '10px', paddingTop: '10px', backgroundColor: '#f9f9f9', padding: '10px', borderRadius: '5px' }}>
+                    <div className="detail-row" style={{ color: '#2c3e50' }}>
+                        <strong>Fecha Real Devolución:</strong>
+                        <span>{rent.realReturnDate} ({formatTime(rent.returnTime) || '--:--'})</span>
+                    </div>
+                    <div className="detail-row">
+                        <strong>Recibido por:</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                             <span>{rent.returnEmployeeNameSnapshot || 'Desconocido'}</span>
+                             <span style={{ fontSize: '0.8rem', color: '#888' }}>{rent.returnEmployeeRun}</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <hr style={{ margin: '10px 0', border: '0', borderTop: '1px solid #eee' }}/>
+
             <div className="detail-row">
                 <strong>Total Herramientas:</strong>
                 <span>{rent.rentTools ? rent.rentTools.length : 0}</span>
             </div>
-            <div className="detail-row">
+            <div className="detail-row" style={{ display: 'block' }}>
                 {/* Small list of tools */}
                     {rent.rentTools && (
-                      <div style={{fontSize: '0.85rem', color: '#666', marginTop: '0.5rem', fontStyle: 'italic'}}>
-                        {rent.rentTools.map(rt => rt.toolNameSnapshot || 'Herramienta desconocida').join(', ')}
-                      </div>
-                    )}
+                    <ul style={{ 
+                        fontSize: '0.85rem', 
+                        color: '#666', 
+                        marginTop: '0.5rem', 
+                        fontStyle: 'italic',
+                        paddingLeft: '1.2rem',
+                        margin: '0.5rem 0'
+                    }}>
+                        {rent.rentTools.map((rt, index) => (
+                            <li key={index} style={{ marginBottom: '4px' }}>
+                                {rt.toolNameSnapshot || 'Herramienta desconocida'}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
 
-        {/* Footer with validity (Valid/Overdue) */}
+        {/* Footer */}
         <div className="rent-card-footer">
             
         </div>

@@ -35,4 +35,7 @@ public class KardexEntity {
 
     @Column(name = "employee_run", nullable = false)
     private String employeeRun;
+
+    @Column(name = "employee_name_snapshot")
+    private String employeeNameSnapshot;
 }

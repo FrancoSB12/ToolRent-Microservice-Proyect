@@ -7,11 +7,15 @@ import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Enum.ToolDamageLevel;
 import com.toolrent.inventoryservice.Enum.ToolStatus;
 import com.toolrent.inventoryservice.Model.Client;
+import com.toolrent.inventoryservice.Model.Employee;
 import com.toolrent.inventoryservice.Model.Rent;
 import com.toolrent.inventoryservice.Model.RentXToolItem;
 import com.toolrent.inventoryservice.Repository.ToolItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -54,7 +58,8 @@ public class ToolItemService {
         ToolItemEntity savedToolItem = toolItemRepository.save(newToolItem);
 
         //Create and save the associated kardex
-        createKardex(managedToolType.getName(), "REGISTRO", 1, employeeRun);
+        Employee employee = fetchEmployeeInDB(employeeRun);
+        createKardex(managedToolType.getName(), "REGISTRO", 1, employee);
 
         return savedToolItem;
     }
@@ -78,10 +83,6 @@ public class ToolItemService {
                 ToolStatus.DISPONIBLE,
                 acceptableLevel
         ).orElseThrow(() -> new RuntimeException("No hay unidades disponibles de este tipo de herramienta."));
-    }
-
-    public List<ToolTypeEntity> getToolTypesByToolItemIds(List<Long> toolItemIds){
-        return toolItemRepository.findToolTypesByToolItemIds(toolItemIds);
     }
 
     public boolean exists(Long id){ return toolItemRepository.existsById(id); }
@@ -138,6 +139,8 @@ public class ToolItemService {
         Optional<ToolItemEntity> dbToolItem = getToolItemById(id);
         ToolItemEntity dbToolItemEnt = dbToolItem.get();
 
+        Employee employee = fetchEmployeeInDB(employeeRun);
+
         if(toolItem.getDamageLevel() == ToolDamageLevel.IRREPARABLE || toolItem.getDamageLevel() == ToolDamageLevel.DESUSO){
             //The only way to unintentionally disable an undamaged tool is if the admin does so by mistake, which is a human error that cannot be corrected in the code
 
@@ -151,7 +154,7 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Creates the associated kardex
-            createKardex(updatedToolType.getName(), "BAJA", -1, employeeRun);
+            createKardex(updatedToolType.getName(), "BAJA", -1, employee);
 
         } else {
             //Any other type of damage sends the tool to "En reparación"
@@ -166,7 +169,7 @@ public class ToolItemService {
             dbToolItemEnt.setToolType(updatedToolType);
 
             //Create and save the associated kardex
-            createKardex(updatedToolType.getName(), "REPARACION", -1, employeeRun);
+            createKardex(updatedToolType.getName(), "REPARACION", -1, employee);
         }
         return toolItemRepository.save(dbToolItemEnt);
     }
@@ -178,6 +181,8 @@ public class ToolItemService {
         Optional<ToolItemEntity> dbToolItem = getToolItemById(toolId);
         ToolItemEntity dbToolItemEnt = dbToolItem.get();
 
+        Employee employee = fetchEmployeeInDB(employeeRun);
+
         List<RentXToolItem> toolItemHistory = getToolItemHistoryInDB(toolId);
 
         if(toolItemHistory.isEmpty()){
@@ -185,7 +190,7 @@ public class ToolItemService {
         }
 
         //The first one in the list is the most recent rent that the tool has
-        Rent lastRent = fetchRentInDB(toolItemHistory.get(0).getRentId());
+        Rent lastRent = fetchRentInDB(toolItemHistory.get(0).getRent().getId());
         Client clientToCharge = fetchClientInDB(lastRent.getClientRun());
 
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
@@ -218,7 +223,7 @@ public class ToolItemService {
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getReplacementValue());
             restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
-            createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1, employeeRun);
+            createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1, employee);
 
         } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
             ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getDamageFee());
@@ -261,7 +266,8 @@ public class ToolItemService {
     private List<RentXToolItem> getToolItemHistoryInDB(Long toolItemId) {
         List<RentXToolItem> rentXToolItem;
         try {
-            rentXToolItem = restTemplate.getForObject("http://rent-service/rent-x-tool-item/tool-history/" + toolItemId, List.class);
+            ResponseEntity<List<RentXToolItem>> response = restTemplate.exchange("http://rent-service/rent-x-tool-item/tool-history/" + toolItemId, HttpMethod.GET, null, new ParameterizedTypeReference<List<RentXToolItem>>() {});
+            rentXToolItem = response.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             //The client microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Herramienta no encontrada con ID: " + toolItemId);
@@ -276,6 +282,25 @@ public class ToolItemService {
         }
 
         return rentXToolItem;
+    }
+
+    private Employee fetchEmployeeInDB(String run) {
+        Employee employee;
+        try {
+            employee = restTemplate.getForObject("http://employee-service/employee/" + run, Employee.class);
+        } catch (HttpClientErrorException.NotFound e) {
+            //The employee microservice responded, but said that the employee doesn't exist
+            throw new RuntimeException("Empleado no encontrado con RUN: " + run);
+
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            //The employee microservice responded, but with another error (400, 401, 500, etc.)
+            throw new RuntimeException("Error en servicio de empleados: " + e.getResponseBodyAsString());
+
+        } catch (RestClientException e) {
+            //The employee microservice didn't respond (Off, Timeout, DNS, etc.)
+            throw new RuntimeException("El servicio de empleados está caído o no responde.");
+        }
+        return employee;
     }
 
     private Client fetchClientInDB(String run) {
@@ -308,19 +333,19 @@ public class ToolItemService {
 
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             //The client microservice responded, but with another error (400, 401, 500, etc.)
-            throw new RuntimeException("Error en servicio de clientes: " + e.getResponseBodyAsString());
+            throw new RuntimeException("Error en servicio de arriendos: " + e.getResponseBodyAsString());
 
         } catch (RestClientException e) {
             //The client microservice didn't respond (Off, Timeout, DNS, etc.)
-            throw new RuntimeException("El servicio de clientes está caído o no responde.");
+            throw new RuntimeException("El servicio de arriendos está caído o no responde.");
         }
 
         return rent;
     }
 
-    private void createKardex(String toolTypeName, String operationType, Integer stock, String employeeRun) {
+    private void createKardex(String toolTypeName, String operationType, Integer stock, Employee employee) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employeeRun);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + employee.getSurname());
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

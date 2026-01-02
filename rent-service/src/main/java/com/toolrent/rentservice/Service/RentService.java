@@ -50,7 +50,7 @@ public class RentService {
     }
 
     public List<RentEntity> getRentByReturnDateBeforeAndValidity(){
-        return rentRepository.findByReturnDateBeforeAndValidity(LocalDate.now(), "Atrasado");
+        return rentRepository.findByReturnDateBeforeAndValidityAndStatus(LocalDate.now(), "Atrasado", "Activo");
     }
 
     public List<RentEntity> getRentByValidity(String validity){
@@ -186,8 +186,8 @@ public class RentService {
         rent.setClientRun(client.getRun());
         rent.setClientNameSnapshot(client.getName() + " " + client.getSurname());
 
-        rent.setEmployeeRun(employee.getRun());
-        rent.setEmployeeNameSnapshot(employee.getName()+ " " + employee.getSurname());
+        rent.setRentEmployeeRun(employee.getRun());
+        rent.setRentEmployeeNameSnapshot(employee.getName()+ " " + employee.getSurname());
 
         //Set the late return fee
         Integer lateReturnFee = fetchLateReturnFeeInDB();
@@ -210,7 +210,7 @@ public class RentService {
 
             //Create associated kardex
             ToolType toolType = fetchToolTypeInDB(item.getToolTypeId());
-            createKardex(toolType.getName(), "PRESTAMO", -1, employeeRun);
+            createKardex(toolType.getName(), "PRESTAMO", -1, employee);
         }
 
         //Update the client active rents
@@ -227,6 +227,9 @@ public class RentService {
 
         //The client is searched in the database
         Client client = fetchClientInDB(dbRentEnt.getClientRun());
+
+        //The employee is searched in the database
+        Employee employee = fetchEmployeeInDB(returnRequest.getReturnEmployeeRun());
 
         //The list of tools from the frontend is converted into a map for quick searching
         Map<Long, String> toolDamageMap = new HashMap<>();
@@ -264,8 +267,8 @@ public class RentService {
                     throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
                 }
 
-                createKardex(toolType.getName(), "DEVOLUCION",1, dbRentEnt.getEmployeeRun());
-                createKardex(toolType.getName(), "REPARACION", -1, dbRentEnt.getEmployeeRun());
+                createKardex(toolType.getName(), "DEVOLUCION",1, employee);
+                createKardex(toolType.getName(), "REPARACION", -1, employee);
 
                 //Since the tool returned by the client is damaged, the client is prevented from requesting more tools until the damage level has been verified
                 //If the tools were indeed in good condition, they will be "Active" again
@@ -280,7 +283,7 @@ public class RentService {
 
                 updateAvailableStock(toolType.getId(), 1);
 
-                createKardex(toolType.getName(), "DEVOLUCION", 1, dbRentEnt.getEmployeeRun());
+                createKardex(toolType.getName(), "DEVOLUCION", 1, employee);
 
             } else{
                 throw new RuntimeException("La herramienta ya tiene un nivel de daño");
@@ -302,7 +305,10 @@ public class RentService {
         }
 
         //Finish rent
+        dbRentEnt.setRealReturnDate(LocalDate.now());
         dbRentEnt.setReturnTime(LocalTime.now());
+        dbRentEnt.setReturnEmployeeRun(employee.getRun());
+        dbRentEnt.setReturnEmployeeNameSnapshot(employee.getName()+ " " + employee.getSurname());
         dbRentEnt.setStatus("Finalizado");
         return rentRepository.save(dbRentEnt);
     }
@@ -363,9 +369,9 @@ public class RentService {
         }
     }
 
-    private void createKardex(String toolTypeName, String operationType, Integer stock, String employeeRun) {
+    private void createKardex(String toolTypeName, String operationType, Integer stock, Employee employee) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employeeRun);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + employee.getSurname());
             restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");

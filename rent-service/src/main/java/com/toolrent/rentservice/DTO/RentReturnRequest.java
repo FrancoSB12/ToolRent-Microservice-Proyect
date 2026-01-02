@@ -11,5 +11,5 @@ import java.util.List;
 @AllArgsConstructor
 public class RentReturnRequest {
     private List<ToolReturnInfoDTO> returnedTools;
-    private String employeeRun;
+    private String returnEmployeeRun;
 }

@@ -99,7 +99,7 @@ const KardexDateRangeReport = () => {
                                     <TableRow key={movement.id} hover>
                                         <TableCell>{movement.id}</TableCell>
                                         <TableCell>{movement.date}</TableCell>
-                                        <TableCell>{movement.toolType?.name || 'N/A'}</TableCell> 
+                                        <TableCell>{movement.toolTypeName || 'N/A'}</TableCell> 
                                         <TableCell>{movement.operationType}</TableCell>
                                         <TableCell align="right">{movement.stockInvolved}</TableCell>
                                     </TableRow>

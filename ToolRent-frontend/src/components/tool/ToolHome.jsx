@@ -16,6 +16,11 @@ const ToolsHome = () => {
 
   const handleRegisterClickToolType = () => { navigate('/tools/register-tool-type'); };
   const handleViewToolItemClick = () => { navigate('/tools/tool-items'); };
+  const handleToolRentalFeeConfigClick = () => { navigate('/tools/rental-fee-config'); };
+  const handleToolReplacementValueConfigClick = () => { navigate('/tools/replacement-value-config'); };
+  const handleToolKardexClick = () => { navigate('/tools/kardex-view'); };
+  const handleToolDateRangeReportClick = () => { navigate('/tools/kardex-date-range-report'); };
+  const handleToolMostRentedRankingClick = () => { navigate('/tools/most-rented-ranking'); };
 
   useEffect(() => {
     /* Fetch tools data if logged in to keycloak */
@@ -72,30 +77,37 @@ const ToolsHome = () => {
 
         <button 
           className="action-btn"
-          onClick={() => navigate('/tools/rental-fee-config')} 
+          onClick={handleToolRentalFeeConfigClick}
         >
           Configurar Tarifa de Arriendo
         </button>
 
         <button 
           className="action-btn"
-          onClick={() => navigate('/tools/replacement-value-config')} 
+          onClick={handleToolReplacementValueConfigClick}
         >
           Configurar Valor de Reemplazo
         </button>
 
         <button 
           className="action-btn"
-          onClick={() => navigate('/tools/kardex-view')} 
+          onClick={handleToolKardexClick}
         >
           Ver movimientos de Herramientas
         </button>
 
         <button 
           className="action-btn"
-          onClick={() => navigate('/tools/kardex-date-range-report')} 
+          onClick={handleToolDateRangeReportClick}
         >
           Ver movimientos entre fechas
+        </button>
+
+        <button 
+          className="action-btn"
+          onClick={handleToolMostRentedRankingClick}
+        >
+          Ver Ranking de Herramientas más Arriendas
         </button>
       </div>
       

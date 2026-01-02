@@ -56,16 +56,16 @@ const RentReturnProcess = () => {
         e.preventDefault();
         if (!rent) return;
 
-        const employeeRun = keycloak.tokenParsed?.preferred_username;
+        const returnEmployeeRun = keycloak.tokenParsed?.preferred_username;
 
-        if (!employeeRun) {
+        if (!returnEmployeeRun) {
             toast.error("No se pudo identificar al empleado. Inicie sesión nuevamente.");
             return;
         }
 
         //Construct the DTO 'RentReturnRequest'
         const returnRequestPayload = {
-            employeeRun: employeeRun,
+            returnEmployeeRun: returnEmployeeRun,
             returnedTools: rent.rentTools.map(rt => ({
                 toolItemId: rt.toolItemId,
                 damageLevel: toolConditions[rt.toolItemId]

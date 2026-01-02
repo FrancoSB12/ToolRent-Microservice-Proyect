@@ -153,7 +153,7 @@ public class RentController {
             }
 
             //It's verified that the employee exist
-            if(!rentService.existsEmployee(rentReturnRequest.getEmployeeRun())){
+            if(!rentService.existsEmployee(rentReturnRequest.getReturnEmployeeRun())){
                 return new ResponseEntity<>("Empleado no encontrado en la base de datos", HttpStatus.NOT_FOUND);
             }
 

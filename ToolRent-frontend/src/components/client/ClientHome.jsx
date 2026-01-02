@@ -19,6 +19,10 @@ const ClientHome = () => {
     navigate('/clients/register');
   };
 
+   const handleOverdueClick = () => {
+    navigate('/clients/overdue');
+  };
+
   useEffect(() => {
     if (initialized) {
       clientService.getAll()
@@ -52,6 +56,12 @@ const ClientHome = () => {
           onClick={handleRegisterClick}
         >
         Registrar Cliente
+        </button>
+        <button 
+          className="action-btn"
+          onClick={handleOverdueClick}
+        >
+        Ver Clientes con Arriendos Atrasados
         </button>
       </div>
       

@@ -9,10 +9,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RentXToolItem {
     private Long id;
-    private Long rentId;
+    private Rent rent;
     private Long toolItemId;
     private Long toolTypeId;
     private String serialNumberSnapshot;
     private String toolNameSnapshot;
-    private Integer agreedPrice;
 }

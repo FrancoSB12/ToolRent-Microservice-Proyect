@@ -1,6 +1,5 @@
 package com.toolrent.rentservice.Entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
@@ -19,7 +18,6 @@ public class RentXToolItemEntity {
     private Long id;
 
     @ManyToOne
-    @JsonIgnore
     @JoinColumn(name = "rent_id", referencedColumnName = "id")
     private RentEntity rent;
 

@@ -98,6 +98,13 @@ public class ToolTypeController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
+    @PreAuthorize("hasAnyRole('Employee','Admin')")
+    @PostMapping("/get-tool-types")
+    public ResponseEntity<List<ToolTypeEntity>> getToolTypesByToolItemIds(@RequestBody List<Long> toolItemIds) {
+        List<ToolTypeEntity> toolTypes = toolTypeService.getToolTypesByToolItemIds(toolItemIds);
+        return new ResponseEntity<>(toolTypes, HttpStatus.OK);
+    }
+
     //Update tool
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")

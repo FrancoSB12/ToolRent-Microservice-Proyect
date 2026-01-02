@@ -112,13 +112,6 @@ public class ToolItemController {
         }
     }
 
-    @PreAuthorize("hasAnyRole('Employee','Admin')")
-    @PostMapping("/get-tool-types")
-    public ResponseEntity<List<ToolTypeEntity>> getToolTypesByToolItemIds(@RequestBody List<Long> toolItemIds) {
-        List<ToolTypeEntity> toolTypes = toolItemService.getToolTypesByToolItemIds(toolItemIds);
-        return new ResponseEntity<>(toolTypes, HttpStatus.OK);
-    }
-
     //Update tool item
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/{id}")
@@ -153,6 +146,10 @@ public class ToolItemController {
 
         if(dbToolItem.get().getDamageLevel() == ToolDamageLevel.IRREPARABLE){
             return new ResponseEntity<>("La herramienta tiene un daño irreparable, por ende, no puede volver a estar disponible", HttpStatus.BAD_REQUEST);
+        }
+
+        if(dbToolItem.get().getDamageLevel() == ToolDamageLevel.EN_EVALUACION){
+            return new ResponseEntity<>("La herramienta está en evaluación, para volver a habilitarla vaya a la sección de evaluación de daños", HttpStatus.BAD_REQUEST);
         }
 
         if(dbToolItem.get().getStatus() == ToolStatus.PRESTADA){

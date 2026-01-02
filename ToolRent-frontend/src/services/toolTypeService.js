@@ -16,12 +16,7 @@ const getTypeByName = name => {
     return httpClient.get(`/inventory/tool-type/name/${name}`);
 }
 
-const updateType = (id, newValue) => {
-    const toolTypeUpdate = {
-        id: id,
-        replacementValue: newValue
-    };
-
+const updateType = (id, toolTypeUpdate) => {
     return httpClient.put(`/inventory/tool-type/${id}`, toolTypeUpdate);
 };
 

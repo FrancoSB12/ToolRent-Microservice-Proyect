@@ -21,8 +21,4 @@ public interface ToolItemRepository extends JpaRepository<ToolItemEntity, Long> 
 
     Optional<ToolItemEntity> findFirstByToolType_IdAndStatusAndDamageLevelIn(Long toolTypeId, ToolStatus status, List<ToolDamageLevel> damageLevels);
 
-    @Query("SELECT DISTINCT i.toolType " +
-            "FROM ToolItemEntity i " +
-            "WHERE i.id IN :ids")
-    List<ToolTypeEntity> findToolTypesByToolItemIds(@Param("ids") List<Long> ids);
 }
