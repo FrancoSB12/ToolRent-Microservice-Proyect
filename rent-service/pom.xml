@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.toolrent</groupId>
 	<artifactId>rentservice</artifactId>
-	<version>0.0.1</version>
+	<version>1.0.0</version>
 	<name>rent-service</name>
 	<description>Rent and return management microservice</description>
 	<url/>

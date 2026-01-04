@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.toolrent</groupId>
 	<artifactId>reportservice</artifactId>
-	<version>0.0.1</version>
+	<version>1.0.0</version>
 	<name>report-service</name>
 	<description>Movements report management microservice</description>
 	<url/>

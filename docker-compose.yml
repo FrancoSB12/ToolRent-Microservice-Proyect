@@ -1,0 +1,243 @@
+services:
+  # --- DATA INFRASTRUCTURE AND IDENTITY ---
+
+  # 1. PostgreSQL Database (Single Container)
+  postgres-db:
+    image: postgres:17
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres # Default DB, others are created with init.sql
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script to create the DBs for all microservices
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - toolrent-net
+
+  # 2. Keycloak (Identity Server)
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: password
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "9090:8080" # Exposed on 9090 to avoid conflict with Gateway
+    depends_on:
+      - postgres-db
+    networks:
+      - toolrent-net
+
+  # --- MICROSERVICES INFRASTRUCTURE ---
+
+  # 3. Config Server (Connected to GitHub)
+  config-service:
+    image: francosb/config-service:latest
+    container_name: config-service
+    ports:
+      - "8888:8888"
+    environment:
+      - SERVER_PORT=8888
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+    networks:
+      - toolrent-net
+
+  # 4. Eureka Server (Service Discovery)
+  discovery-service:
+    image: francosb/discovery-service:latest
+    container_name: discovery-service
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - SERVER_PORT=8761
+      - EUREKA_INSTANCE_HOSTNAME=discovery-service
+    depends_on:
+      - config-service
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  # 5. API Gateway
+  gateway-service:
+    image: francosb/gateway-service:latest
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      # Security validation against Keycloak
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  # --- BUSINESS MICROSERVICES ---
+
+  client-service:
+    image: francosb/client-service:latest
+    container_name: client-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-client
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  employee-service:
+    image: francosb/employee-service:latest
+    container_name: employee-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-employee
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  fee-service:
+    image: francosb/fee-service:latest
+    container_name: fee-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-fee
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  inventory-service:
+    image: francosb/inventory-service:latest
+    container_name: inventory-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-inventory
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  kardex-service:
+    image: francosb/kardex-service:latest
+    container_name: kardex-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-kardex
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  rent-service:
+    image: francosb/rent-service:latest
+    container_name: rent-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-rent
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  report-service:
+    image: francosb/report-service:latest
+    container_name: report-service
+    environment:
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
+      - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-report
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+    depends_on:
+      - postgres-db
+      - config-service
+      - discovery-service
+      - keycloak
+    restart: on-failure
+    networks:
+      - toolrent-net
+
+  # --- FRONTEND ---
+  
+  frontend:
+    image: francosb/toolrent-microservice-frontend:latest
+    container_name: frontend
+    ports:
+      - "80:80"
+    networks:
+      - toolrent-net
+    depends_on:
+      - gateway-service
+    restart: on-failure
+
+volumes:
+  postgres_data:
+
+networks:
+  toolrent-net:
+    driver: bridge

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.toolrent</groupId>
 	<artifactId>kardexservice</artifactId>
-	<version>0.0.1</version>
+	<version>1.0.0</version>
 	<name>kardex-service</name>
 	<description>Kardex management microservice</description>
 	<url/>
