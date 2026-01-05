@@ -79,7 +79,7 @@ services:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
       - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
       # Security validation against Keycloak
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
     depends_on:
       - discovery-service
       - keycloak
