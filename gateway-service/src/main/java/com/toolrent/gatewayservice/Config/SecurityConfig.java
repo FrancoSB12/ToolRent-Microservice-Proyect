@@ -16,7 +16,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) //Deactivate CSRF in APIs
 
-                .cors(cors -> cors.disable())
+                .cors(Customizer.withDefaults())
 
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(HttpMethod.OPTIONS).permitAll()

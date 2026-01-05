@@ -8,16 +8,9 @@ eureka:
     service-url:
       default-zone: http://discovery-service:8761/eureka
   instance:
-    hostname: gateway-service
-    prefer-ip-address: true
+    hostname: localhost
 
 spring:
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://localhost:9090/realms/toolrent-realm
-          jwk-set-uri: http://keycloak:8080/realms/toolrent-realm/protocol/openid-connect/certs
   cloud:
     gateway:
       discovery:
