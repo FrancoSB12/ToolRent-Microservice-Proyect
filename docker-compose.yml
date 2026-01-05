@@ -71,7 +71,7 @@ services:
 
   # 5. API Gateway
   gateway-service:
-    image: francosb/gateway-service:latest
+    build: ./gateway-service
     container_name: gateway-service
     ports:
       - "8080:8080"
