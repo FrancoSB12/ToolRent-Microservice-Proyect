@@ -3,34 +3,40 @@ package com.toolrent.gatewayservice.Config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
+import java.util.List;
+
 
 @Configuration
 public class CorsConfig {
 
     @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
 
-        //Allow frontend requests
-        corsConfig.setAllowedOrigins(Arrays.asList("http://localhost", "http://localhost:5173"));
+        config.setAllowedOrigins(List.of(
+                "http://localhost",
+                "http://localhost:80",
+                "http://localhost:5173"
+        ));
 
-        //Allow all methods (GET, POST, PUT, DELETE, OPTIONS)
-        corsConfig.addAllowedMethod("*");
+        config.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+        ));
 
-        //Allow all headers
-        corsConfig.addAllowedHeader("*");
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type"
+        ));
 
-        //Allow credentials
-        corsConfig.setAllowCredentials(true);
+        config.setAllowCredentials(true);
 
-        //Apply to all routes
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
 
-        return new CorsWebFilter(source);
+        return source;
     }
 }

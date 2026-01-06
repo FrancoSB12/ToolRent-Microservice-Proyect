@@ -65,6 +65,11 @@ public class ClientController {
         return new ResponseEntity<>(clients, HttpStatus.OK);
     }
 
+    @GetMapping("/public/ping")
+    public ResponseEntity<String> ping() {
+        return new ResponseEntity<>("✅ CONEXIÓN EXITOSA CON CLIENT-SERVICE", HttpStatus.OK);
+    }
+
     @PreAuthorize("hasAnyRole('Employee','Admin')")
     @GetMapping("/{clientRun}")
     public ResponseEntity<ClientEntity> getClientByRun(@PathVariable("clientRun") String run){

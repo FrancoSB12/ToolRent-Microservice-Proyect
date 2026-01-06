@@ -5,10 +5,13 @@ eureka:
   client:
     fetch-registry: true
     register-with-eureka: true
+    registry-fetch-interval-seconds: 5
     service-url:
       default-zone: http://discovery-service:8761/eureka
   instance:
-    hostname: localhost
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 5
+    lease-expiration-duration-in-seconds: 10
 
 spring:
   cloud:
@@ -21,6 +24,8 @@ spring:
           uri: lb://client-service
           predicates:
             - Path=/client/**
+          filters:
+            - StripPrefix=1
 
         - id: employee-service
           uri: lb://employee-service

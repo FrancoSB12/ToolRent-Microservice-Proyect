@@ -50,6 +50,11 @@ services:
       - SERVER_PORT=8888
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - toolrent-net
 
@@ -71,17 +76,15 @@ services:
 
   # 5. API Gateway
   gateway-service:
-    build: ./gateway-service
+    image: francosb/gateway-service:latest
     container_name: gateway-service
     ports:
       - "8080:8080"
     environment:
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-service:8888/
       - JAVA_TOOL_OPTIONS=-Deureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/
-      # Security validation against Keycloak
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=DEBUG
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI=http://localhost:9090/realms/toolrent-realm
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/realms/toolrent-realm/protocol/openid-connect/certs
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9090/realms/toolrent-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/toolrent-realm/protocol/openid-connect/certs
     depends_on:
       - discovery-service
       - keycloak
@@ -100,7 +103,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/ToolRent-client
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/toolrent-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:9090/realms/toolrent-realm
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://keycloak:8080/realms/toolrent-realm/protocol/openid-connect/certs
     depends_on:
       - postgres-db
       - config-service
