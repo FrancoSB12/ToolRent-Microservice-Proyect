@@ -4,20 +4,16 @@ import com.toolrent.inventoryservice.DTO.CreateKardexRequest;
 import com.toolrent.inventoryservice.Entity.ToolTypeEntity;
 import com.toolrent.inventoryservice.Model.Employee;
 import com.toolrent.inventoryservice.Repository.ToolTypeRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,12 +24,14 @@ public class ToolTypeService {
     private final RestTemplate restTemplate;
     ToolTypeRepository toolTypeRepository;
     ToolValidationService toolValidationService;
+    HttpServletRequest httpServletRequest;
 
     @Autowired
-    public ToolTypeService(RestTemplate restTemplate, ToolTypeRepository toolTypeRepository, ToolValidationService toolValidationService) {
+    public ToolTypeService(RestTemplate restTemplate, ToolTypeRepository toolTypeRepository, ToolValidationService toolValidationService, HttpServletRequest httpServletRequest) {
         this.restTemplate = restTemplate;
         this.toolTypeRepository = toolTypeRepository;
         this.toolValidationService = toolValidationService;
+        this.httpServletRequest = httpServletRequest;
     }
 
     public List<ToolTypeEntity> getAllToolTypes(){
@@ -59,7 +57,18 @@ public class ToolTypeService {
 
         Employee employee;
         try {
-            employee = restTemplate.getForObject("http://employee-service/employee/" + employeeRun, Employee.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+
+            String url = "http://employee-service/employee/" + employeeRun;
+
+            ResponseEntity<Employee> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Employee.class
+            );
+
+            employee = response.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             //The employee microservice responded, but said that the employee doesn't exist
             throw new RuntimeException("Empleado no encontrado con RUN: " + employeeRun);
@@ -78,9 +87,27 @@ public class ToolTypeService {
         }
 
         //Create and save the associated kardex
-        CreateKardexRequest createKardexRequest = new CreateKardexRequest(newToolType.getName(), "REGISTRO", 0, employeeRun, employee.getName() + " " + employee.getSurname());
-        String url = "http://kardex-service/kardex/entry";
-        restTemplate.postForObject(url, createKardexRequest, Void.class);
+        CreateKardexRequest createKardexRequest = new CreateKardexRequest(
+                newToolType.getName(),
+                "REGISTRO",
+                0,
+                employeeRun,
+                employee.getName() + " " + employee.getSurname()
+        );
+
+        HttpEntity<CreateKardexRequest> kardexRequestEntity = createAuthEntity(createKardexRequest);
+
+        String kardexUrl = "http://kardex-service/kardex/entry";
+        try {
+            restTemplate.exchange(
+                    kardexUrl,
+                    HttpMethod.POST,
+                    kardexRequestEntity,
+                    Void.class
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error al registrar en Kardex: " + e.getMessage());
+        }
 
         return savedToolType;
     }
@@ -105,10 +132,7 @@ public class ToolTypeService {
                     body.put("name", oldName);
                     body.put("newName", toolType.getName());
 
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setContentType(MediaType.APPLICATION_JSON);
-
-                    HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(body, headers);
+                    HttpEntity<Map<String, String>> requestEntity = createAuthEntity(body);
 
                     restTemplate.exchange(
                             url,
@@ -209,5 +233,25 @@ public class ToolTypeService {
         } else{
             return false;
         }
+    }
+
+    //Private method
+    private <T> HttpEntity<T> createAuthEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Extraer credenciales del request actual
+        String userRoles = httpServletRequest.getHeader("X-User-Roles");
+        String userId = httpServletRequest.getHeader("X-User-Id");
+
+        // Inyectar credenciales si existen
+        if (userRoles != null) {
+            headers.set("X-User-Roles", userRoles);
+        }
+        if (userId != null) {
+            headers.set("X-User-Id", userId);
+        }
+
+        return new HttpEntity<>(body, headers);
     }
 }

@@ -5,7 +5,12 @@ import com.toolrent.feeservice.DTO.UpdateLateReturnFeeRequest;
 import com.toolrent.feeservice.Entity.LateReturnFeeEntity;
 import com.toolrent.feeservice.Model.Client;
 import com.toolrent.feeservice.Repository.LateReturnFeeRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
@@ -18,11 +23,13 @@ import java.time.temporal.ChronoUnit;
 public class FeeService {
     private final LateReturnFeeRepository lateReturnFeeRepository;
     private final RestTemplate restTemplate;
+    HttpServletRequest httpServletRequest;
 
     @Autowired
-    public FeeService(LateReturnFeeRepository lateReturnFeeRepository, RestTemplate restTemplate) {
+    public FeeService(LateReturnFeeRepository lateReturnFeeRepository, RestTemplate restTemplate, HttpServletRequest httpServletRequest) {
         this.lateReturnFeeRepository = lateReturnFeeRepository;
         this.restTemplate = restTemplate;
+        this.httpServletRequest = httpServletRequest;
     }
 
     private static final Integer DEFAULT_FEE = 5000;    //Default value in case the db is empty
@@ -53,7 +60,13 @@ public class FeeService {
 
         try {
             client.setDebt(client.getDebt() + lateReturnFeeDays);
-            restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+            HttpEntity<Client> requestEntity = createAuthEntity(client);
+            restTemplate.exchange(
+                    "http://client-service/client/" + client.getRun(),
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando datos del cliente.");
         }
@@ -64,6 +77,37 @@ public class FeeService {
         client.setDebt(client.getDebt() + fee);
         client.setStatus("Restringido");
 
-        restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+        HttpEntity<Client> requestEntity = createAuthEntity(client);
+
+        try {
+            restTemplate.exchange(
+                    "http://client-service/client/" + client.getRun(),
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
+        } catch (RestClientException e) {
+            throw new RuntimeException("Error al actualizar deuda del cliente: " + e.getMessage());
+        }
+    }
+
+    //Private method
+    private <T> HttpEntity<T> createAuthEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Extraer credenciales del request actual
+        String userRoles = httpServletRequest.getHeader("X-User-Roles");
+        String userId = httpServletRequest.getHeader("X-User-Id");
+
+        // Inyectar credenciales si existen
+        if (userRoles != null) {
+            headers.set("X-User-Roles", userRoles);
+        }
+        if (userId != null) {
+            headers.set("X-User-Id", userId);
+        }
+
+        return new HttpEntity<>(body, headers);
     }
 }

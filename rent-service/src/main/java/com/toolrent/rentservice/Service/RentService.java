@@ -8,7 +8,9 @@ import com.toolrent.rentservice.Model.Employee;
 import com.toolrent.rentservice.Model.ToolItem;
 import com.toolrent.rentservice.Model.ToolType;
 import com.toolrent.rentservice.Repository.RentRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -25,12 +27,14 @@ public class RentService {
     RentRepository rentRepository;
     RentXToolItemService rentXToolItemService;
     RestTemplate restTemplate;
+    HttpServletRequest httpServletRequest;
 
     @Autowired
-    public RentService(RentRepository rentRepository, RentXToolItemService rentXToolItemService, RestTemplate restTemplate) {
+    public RentService(RentRepository rentRepository, RentXToolItemService rentXToolItemService, RestTemplate restTemplate, HttpServletRequest httpServletRequest) {
         this.rentRepository = rentRepository;
         this.rentXToolItemService = rentXToolItemService;
         this.restTemplate = restTemplate;
+        this.httpServletRequest = httpServletRequest;
     }
 
     public List<RentEntity> getAllRents(){
@@ -262,7 +266,13 @@ public class RentService {
                 try {
                     remoteToolItem.setStatus("EN_REPARACION");
                     remoteToolItem.setDamageLevel(reportedDamageLevel);
-                    restTemplate.put("http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(), remoteToolItem, ToolItem.class);
+                    HttpEntity<ToolItem> requestEntity = createAuthEntity(remoteToolItem);
+                    restTemplate.exchange(
+                            "http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(),
+                            HttpMethod.PUT,
+                            requestEntity,
+                            Void.class
+                    );
                 } catch (RestClientException e) {
                     throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
                 }
@@ -279,12 +289,20 @@ public class RentService {
                 //If it isn't in under review then it's "No dañada"
                 remoteToolItem.setStatus("DISPONIBLE");
                 remoteToolItem.setDamageLevel("NO_DANADA");
-                restTemplate.put("http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(), remoteToolItem, ToolItem.class);
+                try {
+                    HttpEntity<ToolItem> requestEntity = createAuthEntity(remoteToolItem);
+                    restTemplate.exchange(
+                            "http://inventory-service/inventory/tool-item/" + remoteToolItem.getId(),
+                            HttpMethod.PUT,
+                            requestEntity,
+                            Void.class
+                    );
+                } catch (RestClientException e) {
+                    throw new RuntimeException("Error actualizando herramienta sana en inventario.");
+                }
 
                 updateAvailableStock(toolType.getId(), 1);
-
                 createKardex(toolType.getName(), "DEVOLUCION", 1, employee);
-
             } else{
                 throw new RuntimeException("La herramienta ya tiene un nivel de daño");
             }
@@ -296,8 +314,23 @@ public class RentService {
         //If the client returned the tools late
         if(dbRentEnt.getReturnDate().isBefore(LocalDate.now())){
             //Late return fee calculation and change of status to the client
-            ApplyLateFeeRequest lateFeeRequest = new ApplyLateFeeRequest(dbRentEnt.getReturnDate(), dbRentEnt.getLateReturnFee(), client);
-            restTemplate.put("http://fee-service/fee/apply-late-return-fee", lateFeeRequest, Integer.class);
+            ApplyLateFeeRequest lateFeeRequest = new ApplyLateFeeRequest(
+                    dbRentEnt.getReturnDate(),
+                    dbRentEnt.getLateReturnFee(),
+                    client
+            );
+            try {
+                HttpEntity<ApplyLateFeeRequest> feeRequestEntity = createAuthEntity(lateFeeRequest);
+
+                restTemplate.exchange(
+                        "http://fee-service/fee/apply-late-return-fee",
+                        HttpMethod.PUT,
+                        feeRequestEntity,
+                        Void.class
+                );
+            } catch (RestClientException e) {
+                throw new RuntimeException("Error aplicando multa por atraso: " + e.getMessage());
+            }
 
             dbRentEnt.setValidity("Atrasado");
         } else{
@@ -329,7 +362,13 @@ public class RentService {
                 if (!client.getStatus().equals("Restringido")) {
                     try {
                         client.setStatus("Restringido");
-                        restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+                        HttpEntity<Client> requestEntity = createAuthEntity(client);
+                        restTemplate.exchange(
+                                "http://client-service/client/" + client.getRun(),
+                                HttpMethod.PUT,
+                                requestEntity,
+                                Void.class
+                        );
                     } catch (RestClientException e) {
                         throw new RuntimeException("Error actualizando datos del cliente.");
                     }
@@ -339,22 +378,68 @@ public class RentService {
     }
 
     //Private methods
+    private <T> HttpEntity<T> createAuthEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Extraer credenciales del request actual
+        String userRoles = httpServletRequest.getHeader("X-User-Roles");
+        String userId = httpServletRequest.getHeader("X-User-Id");
+
+        // Inyectar credenciales si existen
+        if (userRoles != null) {
+            headers.set("X-User-Roles", userRoles);
+        }
+        if (userId != null) {
+            headers.set("X-User-Id", userId);
+        }
+
+        return new HttpEntity<>(body, headers);
+    }
+
     private Client getClient(String run){
-        return restTemplate.getForObject("http://client-service/client/" + run, Client.class);
+        HttpEntity<Void> requestEntity = createAuthEntity(null);
+        ResponseEntity<Client> response = restTemplate.exchange(
+                "http://client-service/client/" + run,
+                HttpMethod.GET,
+                requestEntity,
+                Client.class
+        );
+        return response.getBody();
     }
 
     private Employee getEmployee(String run){
-        return restTemplate.getForObject("http://employee-service/employee/" + run, Employee.class);
+        HttpEntity<Void> requestEntity = createAuthEntity(null);
+        ResponseEntity<Employee> response = restTemplate.exchange(
+                "http://employee-service/employee/" + run,
+                HttpMethod.GET,
+                requestEntity,
+                Employee.class
+        );
+        return response.getBody();
     }
 
     private ToolItem getToolItem(Long id) {
-        return restTemplate.getForObject("http://inventory-service/inventory/tool-item/" + id, ToolItem.class);
+        HttpEntity<Void> requestEntity = createAuthEntity(null);
+        ResponseEntity<ToolItem> response = restTemplate.exchange(
+                "http://inventory-service/inventory/tool-item/" + id,
+                HttpMethod.GET,
+                requestEntity,
+                ToolItem.class
+        );
+        return response.getBody();
     }
 
     private void updateStatus(ToolItem toolItem, String status){
         try {
             toolItem.setStatus(status);
-            restTemplate.put("http://inventory-service/inventory/tool-item/" + toolItem.getId(), toolItem, ToolItem.class);
+            HttpEntity<ToolItem> requestEntity = createAuthEntity(toolItem);
+            restTemplate.exchange(
+                    "http://inventory-service/inventory/tool-item/" + toolItem.getId(),
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando estado en inventario. Datos inconsistentes.");
         }
@@ -363,7 +448,13 @@ public class RentService {
     private void updateAvailableStock(Long toolTypeId, Integer quantity) {
         try {
             ChangeStockRequest changeStockRequest = new ChangeStockRequest(toolTypeId, quantity);
-            restTemplate.put("http://inventory-service/inventory/tool-type/change-available-stock", changeStockRequest, ToolType.class);
+            HttpEntity<ChangeStockRequest> requestEntity = createAuthEntity(changeStockRequest);
+            restTemplate.exchange(
+                    "http://inventory-service/inventory/tool-type/change-available-stock",
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando stock en inventario. Datos inconsistentes.");
         }
@@ -371,8 +462,20 @@ public class RentService {
 
     private void createKardex(String toolTypeName, String operationType, Integer stock, Employee employee) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + " " + employee.getSurname());
-            restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(
+                    toolTypeName,
+                    operationType,
+                    stock,
+                    employee.getRun(),
+                    employee.getName() + " " + employee.getSurname()
+            );
+            HttpEntity<CreateKardexRequest> requestEntity = createAuthEntity(createKardexRequest);
+            restTemplate.exchange(
+                    "http://kardex-service/kardex/entry",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");
         }
@@ -381,7 +484,13 @@ public class RentService {
     private void updateActiveRents(Client client, Integer quantity) {
         try {
             client.setActiveRents(client.getActiveRents() + quantity);
-            restTemplate.put("http://client-service/client/" + client.getRun(), client, Client.class);
+            HttpEntity<Client> requestEntity = createAuthEntity(client);
+            restTemplate.exchange(
+                    "http://client-service/client/" + client.getRun(),
+                    HttpMethod.PUT,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error actualizando datos del cliente.");
         }
@@ -447,9 +556,16 @@ public class RentService {
     }
 
     private ToolType fetchToolTypeInDB(Long id) {
-        ToolType toolType;
         try {
-            toolType = restTemplate.getForObject("http://inventory-service/inventory/tool-type/" + id, ToolType.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<ToolType> response = restTemplate.exchange(
+                    "http://inventory-service/inventory/tool-type/" + id,
+                    HttpMethod.GET,
+                    requestEntity,
+                    ToolType.class
+            );
+            return response.getBody();
+
         } catch (HttpClientErrorException.NotFound e) {
             //The inventory microservice responded, but said that the tool item doesn't exist
             throw new RuntimeException("El tipo de herramienta con ID " + id + " no existe.");
@@ -462,14 +578,19 @@ public class RentService {
             //The inventory microservice didn't respond (Off, Timeout, DNS, etc.)
             throw new RuntimeException("El servicio de inventario está caído o no responde.");
         }
-
-        return toolType;
     }
 
     private Integer fetchLateReturnFeeInDB() {
-        Integer lateReturnFee;
         try {
-            lateReturnFee = restTemplate.getForObject("http://fee-service/fee/current-late-return-fee", Integer.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<Integer> response = restTemplate.exchange(
+                    "http://fee-service/fee/current-late-return-fee",
+                    HttpMethod.GET,
+                    requestEntity,
+                    Integer.class
+            );
+            return response.getBody();
+
         } catch (HttpClientErrorException.NotFound e) {
             //The fee microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Multa por atraso no encontrada");
@@ -482,7 +603,5 @@ public class RentService {
             //The fee microservice didn't respond (Off, Timeout, DNS, etc.)
             throw new RuntimeException("El servicio de multas está caído o no responde.");
         }
-
-        return lateReturnFee;
     }
 }

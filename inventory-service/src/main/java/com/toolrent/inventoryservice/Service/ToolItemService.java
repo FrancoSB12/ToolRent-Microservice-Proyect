@@ -11,11 +11,11 @@ import com.toolrent.inventoryservice.Model.Employee;
 import com.toolrent.inventoryservice.Model.Rent;
 import com.toolrent.inventoryservice.Model.RentXToolItem;
 import com.toolrent.inventoryservice.Repository.ToolItemRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
@@ -32,13 +32,15 @@ public class ToolItemService {
     ToolItemRepository toolItemRepository;
     ToolTypeService toolTypeService;
     ToolValidationService toolValidationService;
+    HttpServletRequest httpServletRequest;
 
     @Autowired
-    public ToolItemService(ToolItemRepository toolItemRepository, ToolTypeService toolTypeService, ToolValidationService toolValidationService, RestTemplate restTemplate) {
+    public ToolItemService(ToolItemRepository toolItemRepository, ToolTypeService toolTypeService, ToolValidationService toolValidationService, RestTemplate restTemplate, HttpServletRequest httpServletRequest) {
         this.toolItemRepository = toolItemRepository;
         this.toolTypeService = toolTypeService;
         this.toolValidationService = toolValidationService;
         this.restTemplate = restTemplate;
+        this.httpServletRequest = httpServletRequest;
     }
 
     @Transactional
@@ -182,7 +184,6 @@ public class ToolItemService {
         ToolItemEntity dbToolItemEnt = dbToolItem.get();
 
         Employee employee = fetchEmployeeInDB(employeeRun);
-
         List<RentXToolItem> toolItemHistory = getToolItemHistoryInDB(toolId);
 
         if(toolItemHistory.isEmpty()){
@@ -206,7 +207,13 @@ public class ToolItemService {
             if(clientToCharge.getDebt() == 0){
                 try {
                     clientToCharge.setStatus("Activo");
-                    restTemplate.put("http://client-service/client/" + clientToCharge.getRun(), clientToCharge, Client.class);
+                    HttpEntity<Client> clientRequest = createAuthEntity(clientToCharge); // Helper
+                    restTemplate.exchange(
+                            "http://client-service/client/" + clientToCharge.getRun(),
+                            HttpMethod.PUT,
+                            clientRequest,
+                            Void.class
+                    );
                 } catch (RestClientException e) {
                     throw new RuntimeException("Error actualizando datos del cliente.");
                 }
@@ -220,14 +227,34 @@ public class ToolItemService {
         }
 
         //Replacement value or repair charge is applied to the client and creates the associated kardex
+        String feeUrl = "http://fee-service/fee/charge-client";
         if(toolItemFromFront.getDamageLevel() == ToolDamageLevel.IRREPARABLE){
-            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getReplacementValue());
-            restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(
+                    clientToCharge,
+                    dbToolItemEnt.getToolType().getReplacementValue()
+            );
+            HttpEntity<ChargeClientFeeRequest> feeRequest = createAuthEntity(clientFeeRequest);
+            restTemplate.exchange(
+                    feeUrl,
+                    HttpMethod.PUT,
+                    feeRequest,
+                    Void.class
+            );
             createKardex(dbToolItemEnt.getToolType().getName(), "BAJA", -1, employee);
 
         } else if(toolItemFromFront.getDamageLevel() != ToolDamageLevel.NO_DANADA){
-            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(clientToCharge, dbToolItemEnt.getToolType().getDamageFee());
-            restTemplate.put("http://fee-service/fee/charge-client", clientFeeRequest, Void.class);
+            ChargeClientFeeRequest clientFeeRequest = new ChargeClientFeeRequest(
+                    clientToCharge,
+                    dbToolItemEnt.getToolType().getDamageFee()
+            );
+
+            HttpEntity<ChargeClientFeeRequest> feeRequest = createAuthEntity(clientFeeRequest);
+            restTemplate.exchange(
+                    feeUrl,
+                    HttpMethod.PUT,
+                    feeRequest,
+                    Void.class
+            );
         }
 
         //The available stock isn't reduced since is already reduced by the rent
@@ -263,31 +290,59 @@ public class ToolItemService {
         dbToolItem.setToolType(updatedToolType);
     }
 
+    private <T> HttpEntity<T> createAuthEntity(T body) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        // Extraer credenciales del request actual
+        String userRoles = httpServletRequest.getHeader("X-User-Roles");
+        String userId = httpServletRequest.getHeader("X-User-Id");
+
+        // Inyectar credenciales si existen
+        if (userRoles != null) {
+            headers.set("X-User-Roles", userRoles);
+        }
+        if (userId != null) {
+            headers.set("X-User-Id", userId);
+        }
+
+        return new HttpEntity<>(body, headers);
+    }
+
     private List<RentXToolItem> getToolItemHistoryInDB(Long toolItemId) {
-        List<RentXToolItem> rentXToolItem;
         try {
-            ResponseEntity<List<RentXToolItem>> response = restTemplate.exchange("http://rent-service/rent-x-tool-item/tool-history/" + toolItemId, HttpMethod.GET, null, new ParameterizedTypeReference<List<RentXToolItem>>() {});
-            rentXToolItem = response.getBody();
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<List<RentXToolItem>> response = restTemplate.exchange(
+                    "http://rent-service/rent-x-tool-item/tool-history/" + toolItemId,
+                    HttpMethod.GET,
+                    requestEntity,
+                    new ParameterizedTypeReference<List<RentXToolItem>>() {}
+            );
+            return response.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             //The client microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Herramienta no encontrada con ID: " + toolItemId);
 
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             //The client microservice responded, but with another error (400, 401, 500, etc.)
-            throw new RuntimeException("Error en servicio de clientes: " + e.getResponseBodyAsString());
+            throw new RuntimeException("Error en servicio de arriendos: " + e.getResponseBodyAsString());
 
         } catch (RestClientException e) {
             //The client microservice didn't respond (Off, Timeout, DNS, etc.)
-            throw new RuntimeException("El servicio de clientes está caído o no responde.");
+            throw new RuntimeException("El servicio de arriendos está caído o no responde.");
         }
-
-        return rentXToolItem;
     }
 
     private Employee fetchEmployeeInDB(String run) {
-        Employee employee;
         try {
-            employee = restTemplate.getForObject("http://employee-service/employee/" + run, Employee.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<Employee> response = restTemplate.exchange(
+                    "http://employee-service/employee/" + run,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Employee.class
+            );
+            return response.getBody();
         } catch (HttpClientErrorException.NotFound e) {
             //The employee microservice responded, but said that the employee doesn't exist
             throw new RuntimeException("Empleado no encontrado con RUN: " + run);
@@ -300,13 +355,19 @@ public class ToolItemService {
             //The employee microservice didn't respond (Off, Timeout, DNS, etc.)
             throw new RuntimeException("El servicio de empleados está caído o no responde.");
         }
-        return employee;
     }
 
     private Client fetchClientInDB(String run) {
-        Client client;
         try {
-            client = restTemplate.getForObject("http://client-service/client/" + run, Client.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<Client> response = restTemplate.exchange(
+                    "http://client-service/client/" + run,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Client.class
+            );
+            return response.getBody();
+
         } catch (HttpClientErrorException.NotFound e) {
             //The client microservice responded, but said that the client doesn't exist
             throw new RuntimeException("Cliente no encontrado con RUN: " + run);
@@ -319,17 +380,23 @@ public class ToolItemService {
             //The client microservice didn't respond (Off, Timeout, DNS, etc.)
             throw new RuntimeException("El servicio de clientes está caído o no responde.");
         }
-
-        return client;
     }
 
     private Rent fetchRentInDB(Long rentId) {
-        Rent rent;
         try {
-            rent = restTemplate.getForObject("http://rent-service/rent/" + rentId, Rent.class);
+            HttpEntity<Void> requestEntity = createAuthEntity(null);
+            ResponseEntity<Rent> response = restTemplate.exchange(
+                    "http://rent-service/rent/" + rentId,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Rent.class
+            );
+
+            return response.getBody();
+
         } catch (HttpClientErrorException.NotFound e) {
             //The client microservice responded, but said that the client doesn't exist
-            throw new RuntimeException("Préstamo no encontrado con ID: " + rentId);
+            throw new RuntimeException("Arriendo no encontrado con ID: " + rentId);
 
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             //The client microservice responded, but with another error (400, 401, 500, etc.)
@@ -339,14 +406,24 @@ public class ToolItemService {
             //The client microservice didn't respond (Off, Timeout, DNS, etc.)
             throw new RuntimeException("El servicio de arriendos está caído o no responde.");
         }
-
-        return rent;
     }
 
     private void createKardex(String toolTypeName, String operationType, Integer stock, Employee employee) {
         try {
-            CreateKardexRequest createKardexRequest = new CreateKardexRequest(toolTypeName, operationType, stock, employee.getRun(), employee.getName() + " " + employee.getSurname());
-            restTemplate.postForObject("http://kardex-service/kardex/entry", createKardexRequest, Void.class);
+            CreateKardexRequest createKardexRequest = new CreateKardexRequest(
+                    toolTypeName,
+                    operationType,
+                    stock,
+                    employee.getRun(),
+                    employee.getName() + " " + employee.getSurname()
+            );
+            HttpEntity<CreateKardexRequest> requestEntity = createAuthEntity(createKardexRequest);
+            restTemplate.exchange(
+                    "http://kardex-service/kardex/entry",
+                    HttpMethod.POST,
+                    requestEntity,
+                    Void.class
+            );
         } catch (RestClientException e) {
             throw new RuntimeException("Error creando kardex. Datos inconsistentes.");
         }

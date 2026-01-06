@@ -73,9 +73,12 @@ public class SecurityConfig {
                                     .map(r -> r.replace("ROLE_", ""))
                                     .collect(Collectors.joining(","));
 
+                            String userId = auth.getToken().getClaimAsString("preferred_username");
+
                             ServerHttpRequest request = exchange.getRequest()
                                     .mutate()
                                     .header("X-User-Roles", roles)
+                                    .header("X-User-Id", userId)
                                     .build();
 
                             return chain.filter(exchange.mutate().request(request).build());

@@ -14,11 +14,11 @@ import java.util.Map;
 public class KeycloakUserService {
 
     private final RestTemplate restTemplate;
-    private final String keycloakUrl = "http://localhost:9090";
+    private final String keycloakUrl = "http://keycloak:8080";
     private final String realm = "toolrent-realm";
     private final String clientId = "admin-cli";
-    private final String adminUser = "francoadmin";
-    private final String adminPassword = "Admin12";
+    private final String adminUser = "admin2";
+    private final String adminPassword = "admin";
 
     public KeycloakUserService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
