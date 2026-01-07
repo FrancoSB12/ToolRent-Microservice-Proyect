@@ -50,11 +50,6 @@ services:
       - SERVER_PORT=8888
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
       - EUREKA_CLIENT_FETCH_REGISTRY=true
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     networks:
       - toolrent-net
 
