@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: toolrent-secrets 
+type: Opaque
+data:
+  # 'postgres' and 'password' codified in Base64
+  username: cG9zdGdyZXM=
+  password: cGFzc3dvcmQ=
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: toolrent-config 
+data:
+  # Here we define the names of the services within K8s
+  postgres_host: "postgres-db"
+  eureka_url: "http://discovery-service:8761/eureka/"
+  config_url: "optional:configserver:http://config-service:8888/"
+  keycloak_url: "http://keycloak:8080/realms/toolrent-realm"

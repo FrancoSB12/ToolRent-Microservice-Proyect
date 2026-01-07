@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+spec:
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+      - name: gateway-service
+        image: francosb/gateway-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: keycloak_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+spec:
+  selector:
+    app: gateway-service
+  ports:
+    - nodePort: 30080      # The port to access from the browser
+      port: 8080           # The internal port of the service
+      targetPort: 8080     # The port of the Java container
+  type: NodePort

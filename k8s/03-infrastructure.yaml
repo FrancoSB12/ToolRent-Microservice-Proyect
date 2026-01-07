@@ -1,0 +1,139 @@
+# KEYCLOAK 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+      - name: keycloak
+        image: quay.io/keycloak/keycloak:26.0
+        args: ["start-dev"]
+        ports:
+        - containerPort: 8080
+        env:
+        # DB conextion
+        - name: KC_DB
+          value: postgres
+        - name: KC_DB_URL
+          value: jdbc:postgresql://postgres-db:5432/keycloak_db
+        - name: KC_DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: KC_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+        - name: KC_BOOTSTRAP_ADMIN_USERNAME
+          value: admin
+        - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+          value: admin
+        - name: KC_HTTP_ENABLED
+          value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+# CONFIG SERVER
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-service
+spec:
+  selector:
+    matchLabels:
+      app: config-service
+  template:
+    metadata:
+      labels:
+        app: config-service
+    spec:
+      containers:
+      - name: config-service
+        image: francosb/config-service:latest
+        ports:
+        - containerPort: 8888
+        env:
+        - name: EUREKA_CLIENT_REGISTER_WITH_EUREKA
+          value: "true"
+        - name: EUREKA_CLIENT_FETCH_REGISTRY
+          value: "true"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-service
+spec:
+  selector:
+    app: config-service
+  ports:
+    - port: 8888
+      targetPort: 8888
+  type: ClusterIP
+
+---
+
+# 3. DISCOVERY SERVICE (EUREKA)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-service
+spec:
+  selector:
+    matchLabels:
+      app: discovery-service
+  template:
+    metadata:
+      labels:
+        app: discovery-service
+    spec:
+      containers:
+      - name: discovery-service
+        image: francosb/discovery-service:latest
+        ports:
+        - containerPort: 8761
+        env:
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-service
+spec:
+  selector:
+    app: discovery-service
+  ports:
+    - port: 8761
+      targetPort: 8761
+  type: ClusterIP

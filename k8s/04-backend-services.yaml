@@ -1,0 +1,438 @@
+# CLIENT SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-service
+  template:
+    metadata:
+      labels:
+        app: client-service
+    spec:
+      containers:
+      - name: client-service
+        image: francosb/client-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-client"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-service
+spec:
+  selector:
+    app: client-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+--- 
+
+# EMPLOYEE SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: employee-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: employee-service
+  template:
+    metadata:
+      labels:
+        app: employee-service
+    spec:
+      containers:
+      - name: employee-service
+        image: francosb/employee-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-employee"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: employee-service
+spec:
+  selector:
+    app: employee-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+--- 
+
+# FEE SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fee-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fee-service
+  template:
+    metadata:
+      labels:
+        app: fee-service
+    spec:
+      containers:
+      - name: fee-service
+        image: francosb/fee-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-fee"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fee-service
+spec:
+  selector:
+    app: fee-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+# INVENTORY SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-service
+  template:
+    metadata:
+      labels:
+        app: inventory-service
+    spec:
+      containers:
+      - name: inventory-service
+        image: francosb/inventory-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-inventory"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-service
+spec:
+  selector:
+    app: inventory-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+# KARDEX SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kardex-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kardex-service
+  template:
+    metadata:
+      labels:
+        app: kardex-service
+    spec:
+      containers:
+      - name: kardex-service
+        image: francosb/kardex-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-kardex"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kardex-service
+spec:
+  selector:
+    app: kardex-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+# RENT SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rent-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rent-service
+  template:
+    metadata:
+      labels:
+        app: rent-service
+    spec:
+      containers:
+      - name: rent-service
+        image: francosb/rent-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-rent"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rent-service
+spec:
+  selector:
+    app: rent-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+
+# REPORT SERVICE
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: report-service
+  template:
+    metadata:
+      labels:
+        app: report-service
+    spec:
+      containers:
+      - name: report-service
+        image: francosb/report-service:latest 
+        ports:
+        - containerPort: 8080
+        env:
+        # Injection from configmap
+        - name: SPRING_CONFIG_IMPORT
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: config_url
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: toolrent-config
+              key: eureka_url
+        
+        # Manual injection with host reference
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres-db:5432/ToolRent-report"
+
+        # Injection from secret
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: toolrent-secrets
+              key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: report-service
+spec:
+  selector:
+    app: report-service
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
