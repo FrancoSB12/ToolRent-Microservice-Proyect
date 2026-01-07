@@ -24,8 +24,6 @@ spring:
           uri: lb://client-service
           predicates:
             - Path=/client/**
-          filters:
-            - StripPrefix=1
 
         - id: employee-service
           uri: lb://employee-service
